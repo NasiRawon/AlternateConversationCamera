@@ -9,9 +9,16 @@
 *.user
 *.userosscache
 *.sln.docstates
+skse64_license.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
+
+# User-specific folders
+common/
+skse64/
+skse64_common/
+xbyak/
 
 # Build results
 [Dd]ebug/
@@ -19,6 +26,7 @@
 [Rr]elease/
 [Rr]eleases/
 x64/
+x64_v142/
 x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
