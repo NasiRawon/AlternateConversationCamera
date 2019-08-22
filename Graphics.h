@@ -1,21 +1,9 @@
 #pragma once
 
 #include <d3d11.h>
-#include <DirectXMath.h>
 
 namespace Tralala
 {
-#if 1
-	struct ConstantBuffer
-	{
-		DirectX::XMFLOAT2A pos;
-	};
-
-	struct Vertex
-	{
-		DirectX::XMFLOAT2A pos;
-	};
-#endif
 
 	// actually it's part of bigger struct
 	// address = g_swapChainAddr

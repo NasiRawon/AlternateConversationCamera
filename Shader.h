@@ -1,7 +1,5 @@
 #pragma once
 
-// https://github.com/guided-hacking/GH_D3D11_Hook/blob/master/GH_D3D11_Hook/shadez.h
-
 constexpr const char* szShadez = R"(
 // ConstantBuffer
 cbuffer ConstantBuffer

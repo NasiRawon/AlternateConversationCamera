@@ -2,12 +2,11 @@
 #include "Utils.h"
 #include "PatternScanner.h"
 #include "Graphics.h"
-#include "shadez.h"
+#include "Shader.h"
+#include <DirectXMath.h>
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
-
-// https://github.com/guided-hacking/GH_D3D11_Hook/
 
 uintptr_t g_unkStructAddr = 0;
 uintptr_t g_presentAddr = 0;
@@ -31,6 +30,15 @@ namespace Tralala
 
 	D3D11_VIEWPORT pViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{ 0 };
 
+	struct ConstantBuffer
+	{
+		DirectX::XMFLOAT2A pos;
+	};
+
+	struct Vertex
+	{
+		DirectX::XMFLOAT2A pos;
+	};
 
 	void CleanupD3D11()
 	{
@@ -388,6 +396,7 @@ namespace Tralala
 #endif
 }
 
+#include "skse64_common/Utilities.h"
 #include "skse64_common/Relocation.h"
 #include "skse64_common/BranchTrampoline.h"
 #include "skse64_common/SafeWrite.h"
