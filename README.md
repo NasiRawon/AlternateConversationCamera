@@ -14,8 +14,8 @@ Build instructions:
 3. Extract the SKSE64 source code and copy "common", "skse64", "skse64_common", and "xbyak" folders to the project root directory (same location as the solution file)
 4. Open the project solution in Microsoft Visual Studio
 5. Re-add the project references for both skse64 and skse64_common
-   - For skse64, remove both common and skse64_common references then add them back
-   - For skse64_common, remove common reference then add it back
+   - For skse64, remove both common_vc14 and skse64_common references then add them back
+   - For skse64_common, remove common_vc14 reference then add it back
 6. Change the build type for the skse64 project to static lib
 7. Remove the post-build event for the the skse64 project, both the command line and the description
 8. Change the solution configuration to Release mode, then build the project
