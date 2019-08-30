@@ -12,6 +12,7 @@ namespace Tralala
 	uintptr_t g_forceFirstPersonAddr = 0;
 	uintptr_t g_updateThirdPersonAddr = 0;
 	uintptr_t g_isCollideAddr = 0;
+	uintptr_t g_processCamColAddr = 0;
 
 	void PlayerCameraGetAddress()
 	{
@@ -26,6 +27,9 @@ namespace Tralala
 
 		const std::array<BYTE, 6> firstPersonpattern = { 0x48, 0x39, 0x41, 0x28, 0x74, 0x19 };
 		g_forceFirstPersonAddr = (uintptr_t)scan_memory(firstPersonpattern, 0x1B, false);
+
+		const std::array<BYTE, 8> camColpattern = { 0xF3, 0x0F, 0x59, 0x5F, 0x18, 0x0F, 0x28, 0xC7 };
+		g_processCamColAddr = (uintptr_t)scan_memory_data(camColpattern, 0x7B, true, 0x1, 0x5);
 
 		//static const BYTE updateThirdPayload[] = { 0x41, 0x0F, 0xB6, 0xD1, 0x41, 0x0F, 0xB6, 0xD9 };
 		//std::vector<BYTE> updateThirdpattern(updateThirdPayload, updateThirdPayload + sizeof(updateThirdPayload) / sizeof(updateThirdPayload[0]));
@@ -83,6 +87,14 @@ namespace Tralala
 		this->fOverShoulderPosX = pos.x;
 		this->fOverShoulderPosZ = pos.z;
 		this->fOverShoulderCombatAddY = pos.y;
+	}
+
+	void ThirdPersonState::ProcessCameraCollision()
+	{
+		typedef void(*ProcessCamCol_t)(ThirdPersonState*);
+		ProcessCamCol_t ProcessCamCol = (ProcessCamCol_t)g_processCamColAddr;
+
+		ProcessCamCol(this);
 	}
 
 	void TESCamera::SetCameraState(TESCameraState * camState)

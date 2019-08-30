@@ -1,4 +1,5 @@
 #include "ObjectRef.h"
+#include "skse64/NiNodes.h"
 
 namespace Tralala
 {
@@ -14,6 +15,10 @@ namespace Tralala
 	uintptr_t g_clearHeadTrackAddr = 0;
 	uintptr_t g_setDialogueAddr = 0;
 	uintptr_t g_isCastingAddr = 0;
+	uintptr_t g_isSneakingAddr = 0;
+	uintptr_t g_sneakingHeightAddr = 0;
+	uintptr_t g_cameraHeightAddr = 0;
+	uintptr_t g_getFurnHandleAddr = 0;
 
 	void ObjectRefGetAddresses()
 	{
@@ -52,6 +57,17 @@ namespace Tralala
 
 		const std::array<BYTE, 6> castpattern = { 0x41, 0x8B, 0xEF, 0x4C, 0x8B, 0xF2 };
 		g_isCastingAddr = (uintptr_t)scan_memory(castpattern, 0x24, false);
+
+		const std::array<BYTE, 8> sneakpattern = { 0x41, 0x8B, 0xC4, 0x25, 0x00, 0x00, 0xFF, 0xFF };
+		g_isSneakingAddr = (uintptr_t)scan_memory_data(sneakpattern, 0x54, true, 0x1, 0x5);
+
+		const std::array<BYTE, 6> sneakHpattern = { 0x48, 0x8B, 0x06, 0x0F, 0x28, 0xC8 };
+		g_sneakingHeightAddr = (uintptr_t)scan_memory_data(sneakHpattern, 0x9E, true, 0x1, 0x5);
+
+		g_cameraHeightAddr = (uintptr_t)scan_memory_data(sneakHpattern, 0xA5, true, 0x1, 0x5);
+
+		const std::array<BYTE, 8> furnpattern = { 0x48, 0x05, 0x08, 0x02, 0x00, 0x00, 0x8B, 0x00 };
+		g_getFurnHandleAddr = (uintptr_t)scan_memory(furnpattern, 0x9, false);
 	}
 
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
@@ -76,6 +92,14 @@ namespace Tralala
 		ClearHeadTracking_t ClearHeadTracking = (ClearHeadTracking_t)g_clearHeadTrackAddr;
 
 		ClearHeadTracking(this);
+	}
+
+	UInt32* ActorProcessManager::GetFurnitureHandle(UInt32* handle)
+	{
+		typedef UInt32* (*GetFurnitureHandle_t)(ActorProcessManager*, UInt32*);
+		GetFurnitureHandle_t GetFurnitureHandle = (GetFurnitureHandle_t)g_getFurnHandleAddr;
+
+		return GetFurnitureHandle(this, handle);
 	}
 
 	bool IAnimationGraphManagerHolder::SetAnimationVariableBool(const BSFixedString& variableName, bool value)
@@ -116,12 +140,30 @@ namespace Tralala
 		return GetBoundRightBackTop(&p1)->z - GetBoundLeftFrontBottom(&p2)->z;
 	}
 
+	float TESObjectREFR::GetTargetWidth()
+	{	
+		NiPoint3 p1, p2;
+		return GetBoundRightBackTop(&p1)->x - GetBoundLeftFrontBottom(&p2)->x;
+	}
+
 	bool Actor::IsOnMount()
 	{
 		typedef bool(*IsOnMount_t)(Actor*);
 		IsOnMount_t IsOnMount = (IsOnMount_t)g_isonmountAddr;
 
 		return IsOnMount(this);
+	}
+
+	bool Actor::IsOnCarriage()
+	{
+		UInt32 handle = 0;
+		processManager->GetFurnitureHandle(&handle);
+
+		UInt32 sitState = actorState.GetSitState();
+		if ((sitState == ActorState::kSitState_Sitting) && (handle == InvalidRefHandle()))
+			return true;
+
+		return false;
 	}
 
 	bool Actor::IsTalking()
@@ -320,6 +362,45 @@ namespace Tralala
 		IsCasting_t IsCasting = (IsCasting_t)g_isCastingAddr;
 
 		return IsCasting(this, spell);
+	}
+
+	bool Actor::GetTargetHeadNodePosition(float * pos)
+	{
+		if (!processManager->middleProcess)
+			return false;
+
+		if (!processManager->middleProcess->unk158)
+			return false;
+
+		NiNode* headNode = (NiNode*)processManager->middleProcess->unk158;
+
+		*pos = headNode->m_worldTransform.pos.z;
+
+		return true;
+	}
+	
+	bool Actor::IsSneaking()
+	{
+		typedef bool(*IsSneaking_t)(Actor*);
+		IsSneaking_t IsSneaking = (IsSneaking_t)g_isSneakingAddr;
+
+		return IsSneaking(this);
+	}
+
+	float Actor::GetSneakingHeight(bool isCamera)
+	{
+		typedef float(*GetSneakingHeight_t)(Actor*, bool);
+		GetSneakingHeight_t GetSneakingHeight = (GetSneakingHeight_t)g_sneakingHeightAddr;
+
+		return GetSneakingHeight(this, isCamera);
+	}
+
+	float Actor::GetCameraHeight()
+	{
+		typedef float(*GetCameraHeight_t)(Actor*);
+		GetCameraHeight_t GetCameraHeight = (GetCameraHeight_t)g_cameraHeightAddr;
+
+		return GetCameraHeight(this);
 	}
 
 	PlayerCharacter * PlayerCharacter::GetSingleton()

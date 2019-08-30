@@ -27,6 +27,7 @@ namespace Tralala
 		void SetTargetLocation(TESObjectREFR* source, NiPoint3* location);
 		void SetDialogueHeadTrackingTarget(TESObjectREFR* target);
 		void ClearHeadTracking();
+		UInt32* GetFurnitureHandle(UInt32* handle);
 	};
 	STATIC_ASSERT(sizeof(ActorProcessManager) == 0x140);
 
@@ -197,7 +198,8 @@ namespace Tralala
 		UInt32			pad94;	// 94
 
 		float GetDistance(TESObjectREFR * target);
-		float GetTargetHeight(void);
+		float GetTargetHeight();
+		float GetTargetWidth();
 		inline bool IsCharacter()
 		{
 			return this->formType == kFormType_Character;
@@ -249,6 +251,14 @@ namespace Tralala
 			kState_Staggering = 0x2000
 		};
 
+		enum SitState
+		{
+			kSitState_NotSitting = 0,
+			kSitState_WantsToSit = 2,
+			kSitState_Sitting = 3,
+			kSitState_WantsToStand = 4
+		};
+
 		// SE: not changing names of these, they are referenced somewhere else
 		UInt32	flags08;	// 08
 		UInt32	flags0C;	// 0C
@@ -281,6 +291,23 @@ namespace Tralala
 		bool IsRestrained()
 		{
 			return (flags08 & 0x1E00000) == 0xC00000;
+		}
+
+		UInt32 GetSitState() const
+		{
+			UInt32 state = (flags08 >> 0x0E) & 0x0F;
+			switch (state)
+			{
+			case 1:
+			case 2:
+				return kSitState_WantsToSit;
+			case 3:
+				return kSitState_Sitting;
+			case 4:
+				return kSitState_WantsToStand;
+			default:
+				return kSitState_NotSitting;
+			}
 		}
 
 	};
@@ -544,6 +571,7 @@ namespace Tralala
 		UInt64	unk2A8;									// 2A8
 
 		bool IsOnMount();
+		bool IsOnCarriage();
 		bool IsTalking();
 		void SetAngleX(float angle);
 		void SetAngleZ(float angle);
@@ -552,7 +580,11 @@ namespace Tralala
 		TESObjectWEAP* GetEquippedWeapon(bool isLeftHand);
 		bool IsFlyingActor();
 		bool IsNotInFurniture();
-		bool IsCasting(MagicItem* spell);
+		bool IsCasting(MagicItem* spell = nullptr);
+		bool GetTargetHeadNodePosition(float * pos);
+		bool IsSneaking();
+		float GetSneakingHeight(bool isCamera);
+		float GetCameraHeight();
 
 		class FactionVisitor
 		{

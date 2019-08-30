@@ -12,6 +12,7 @@ namespace Tralala
 	uintptr_t g_iSizeHDisplayAddr = 0;
 	uintptr_t g_deltaTimeAddr = 0;
 	uintptr_t g_menuManagerAddr = 0;
+	uintptr_t g_sneakHeightMultAddr = 0;
 	//uintptr_t g_unkcellinfoAddr = 0;
 
 	void UtilsGetAddresses()
@@ -40,6 +41,8 @@ namespace Tralala
 		const std::array<BYTE, 9> menuMgpattern = { 0x48, 0x8B, 0xD1, 0x41, 0xB0, 0x01, 0x49, 0x8B, 0xCA };
 		g_menuManagerAddr = (uintptr_t)scan_memory_data(menuMgpattern, 0x34, false, 0x3, 0x7);
 
+		const std::array<BYTE, 6> sneakpattern = { 0x48, 0x8B, 0xC3, 0x89, 0x4B, 0x04 };
+		g_sneakHeightMultAddr = (uintptr_t)scan_memory_data(sneakpattern, 0x25, true, 0x4, 0x8);
 		//static const BYTE payload[] = { 0x0F, 0x94, 0xC0, 0x88, 0x41, 0x0A };
 		//std::vector<BYTE> pattern(payload, payload + sizeof(payload) / sizeof(payload[0]));
 		//g_unkcellinfoAddr = (uintptr_t)scan_memory_data(pattern, 0x10, false, 0x3, 0x7);

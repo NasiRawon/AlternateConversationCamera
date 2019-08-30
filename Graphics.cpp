@@ -302,7 +302,7 @@ namespace Tralala
 		}
 		else
 		{
-			static int counter = 0;
+			static UInt64 counter = 0;
 
 			MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 			if (!mtm)
@@ -341,59 +341,6 @@ namespace Tralala
 		return *(void**)g_unkStructAddr;
 	}
 #endif
-
-#if 0
-	void MenuRenderHook()
-	{
-		if (!Settings::bLetterBox)
-			return;
-
-		if (g_bInitialised)
-		{
-
-			DrawLetterBox(pContext, 12, 1.0f);
-#if 0
-			static int counter = 0;
-
-			MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
-			if (!mtm)
-				return;
-
-			if (mtm->unkB5)
-				counter++;
-			else
-				counter = 0;
-
-			float step = (speed / 0.016667f) * (*(float*)g_deltaTimeAddr);
-
-			if (mtm->isInDialogueState && (counter <= Settings::uDelay))
-			{
-				DrawLetterBox(pContext, 12, srcHeight);
-
-				if (srcHeight < dstHeight)
-					srcHeight += step;
-				else
-					srcHeight = dstHeight;
-			}
-			else
-			{
-				if (srcHeight > 0 && srcHeight <= dstHeight)
-				{
-					DrawLetterBox(pContext, 12, srcHeight);
-
-					srcHeight -= step;
-				}
-				else
-				{
-					srcHeight = 0.0f;
-				}
-			}
-#endif
-		}
-
-		return;
-	}
-#endif
 }
 
 #include "skse64_common/Utilities.h"
@@ -420,8 +367,6 @@ namespace Graphics
 		const std::array<BYTE, 7> menupattern = { 0x4C, 0x8B, 0xE9, 0x33, 0xC0, 0x8B, 0xF0 };
 		g_menuRenderAddr = (uintptr_t)scan_memory(menupattern, 0x7, true);
 #endif
-		//const std::array<BYTE, 6> menupattern = { 0x0F, 0x57, 0xF6, 0x40, 0x84, 0xFF };
-		//g_menuRenderAddr = (uintptr_t)scan_memory(menupattern, 0xD7, true);
 	}
 
 	void InstallHook()
@@ -507,56 +452,6 @@ namespace Graphics
 
 			g_branchTrampoline.Write5Branch(g_cleanAddr, uintptr_t(code.getCode()));
 		}
-
-#if 0
-		{
-			struct InstallHookMenuRender_Code : Xbyak::CodeGenerator {
-				InstallHookMenuRender_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					push(rcx);
-					push(rdx);
-					push(r8);
-					push(r9);
-					push(r10);
-					push(r11);
-
-					sub(rsp, 0x20);
-
-					call(ptr[rip + funcLabel]);
-
-					add(rsp, 0x20);
-					pop(r11);
-					pop(r10);
-					pop(r9);
-					pop(r8);
-					pop(rdx);
-					pop(rcx);
-
-					xor(eax, eax);
-					mov(dword[rsp + 0xA0], eax);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(funcAddr);
-
-					L(retnLabel);
-					dq(g_menuRenderAddr + 0x5);
-				}
-			};
-
-			void* codeBuf = g_localTrampoline.StartAlloc();
-			InstallHookMenuRender_Code code(codeBuf, GetFnAddr(Tralala::MenuRenderHook));
-			g_localTrampoline.EndAlloc(code.getCurr());
-
-			g_branchTrampoline.Write5Branch(g_menuRenderAddr, uintptr_t(code.getCode()));
-
-			SafeWrite16(g_menuRenderAddr + 0x5, NOP16);
-		}
-#endif
 	}
 }
 

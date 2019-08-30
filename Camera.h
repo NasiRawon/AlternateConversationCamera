@@ -112,6 +112,7 @@ namespace Tralala
 		float	GetDistanceWithinTargetHead(Tralala::Actor * target);
 		void	SetFirstPersonSmooth(float minZoom, bool overShoulder = false);
 		void	SetShoulderPos(const NiPoint3& pos);
+		void	ProcessCameraCollision();
 	};
 	STATIC_ASSERT(offsetof(ThirdPersonState, diffRotZ) == 0xD4);
 	STATIC_ASSERT(offsetof(ThirdPersonState, diffRotX) == 0xD8);

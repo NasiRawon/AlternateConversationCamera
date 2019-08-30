@@ -9,6 +9,8 @@ struct Settings
 	static float	f1stZoom;
 	static float	f3rdZoom;
 	static float	fDragonZoom;
+	static float	fMessagePosX;
+	static float	fMessagePosY;
 	static int		uLetterBoxThickness;
 	static int		uLetterBoxSpeed;
 	static int		uDelay;

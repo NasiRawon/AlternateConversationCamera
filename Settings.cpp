@@ -23,6 +23,8 @@ float	Settings::fAddOverShoulderPosY = 0.0f;
 float	Settings::f1stZoom = 50.0f;
 float	Settings::f3rdZoom = 75.0f;
 float	Settings::fDragonZoom = 125.0f;
+float	Settings::fMessagePosX = -601.f;
+float	Settings::fMessagePosY = -400.f;
 
 std::wstring thisPath = L"";
 
@@ -45,6 +47,8 @@ void Settings::Load()
 	TCHAR posX[8];
 	TCHAR posZ[8];
 	TCHAR posY[8];
+	TCHAR mesPosX[8];
+	TCHAR mesPosY[8];
 
 	Settings::bLockOn = GetPrivateProfileInt(L"Settings", L"bLockOn", 1, thisPath.c_str());
 	Settings::bForceFirstPerson = GetPrivateProfileInt(L"Settings", L"bForceFirstPerson", 1, thisPath.c_str());
@@ -66,7 +70,12 @@ void Settings::Load()
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosZ", L"-5", posZ, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosY", L"0", posY, 8, thisPath.c_str());
 
+	GetPrivateProfileString(L"Settings", L"iMessagePosX", L"-601", mesPosX, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iMessagePosY", L"-400", mesPosY, 8, thisPath.c_str());
+
 	Settings::fAddOverShoulderPosX = (float)_wtoi(posX);
 	Settings::fAddOverShoulderPozZ = (float)_wtoi(posZ);
 	Settings::fAddOverShoulderPosY = (float)_wtoi(posY);
+	Settings::fMessagePosX = (float)_wtoi(mesPosX);
+	Settings::fMessagePosY = (float)_wtoi(mesPosY);
 }

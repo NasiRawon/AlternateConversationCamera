@@ -11,6 +11,7 @@
 #include "Settings.h"
 #include "ObjectRef.h"
 #include "Graphics.h"
+#include "ScaleformUtils.h"
 
 #include <shlobj.h>
 
@@ -52,6 +53,9 @@ uintptr_t g_updateActorAddr = 0;
 uintptr_t g_actorPerFrameAddr = 0;
 uintptr_t g_beginSaveAddr = 0;
 uintptr_t g_finishSaveAddr = 0;
+uintptr_t g_thirdCamHeightAddr = 0;
+uintptr_t g_thirdCamColAddr = 0;
+uintptr_t g_hudMenuNextFrameAddr = 0;
 
 void MainGetAddresses()
 {
@@ -109,6 +113,14 @@ void MainGetAddresses()
 
 	const std::array<BYTE, 7> finishPattern = { 0x89, 0x45, 0xA4, 0x4C, 0x8D, 0x45, 0x20 };
 	g_finishSaveAddr = (uintptr_t)scan_memory(finishPattern, 0x8D, true);
+
+	const std::array<BYTE, 8> camHeightPattern = { 0xF3, 0x0F, 0x59, 0x5F, 0x18, 0x0F, 0x28, 0xC7 };
+	g_thirdCamHeightAddr = (uintptr_t)scan_memory(camHeightPattern, 0x71, false);
+
+	g_thirdCamColAddr = (uintptr_t)scan_memory(camHeightPattern, 0x7B, true);
+
+	const std::array<BYTE, 9> testhudpattern = { 0x90, 0x89, 0x1C, 0x2F, 0x48, 0x8B, 0x5C, 0x24, 0x68 };
+	g_hudMenuNextFrameAddr = (uintptr_t)scan_memory(testhudpattern, 0x93, false);
 }
 
 
@@ -143,6 +155,9 @@ static bool IsValidFaceToFace(Tralala::PlayerCamera * camera)
 		return false;
 
 	if (Tralala::PlayerCharacter::GetSingleton()->IsOnMount())
+		return false;
+
+	if (Tralala::PlayerCharacter::GetSingleton()->IsOnCarriage())
 		return false;
 
 	return true;
@@ -600,7 +615,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 					break;
 				}
 
-				if (player->IsCasting(nullptr)) // fix for spell
+				if (player->IsCasting()) // fix for spell
 					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
 			}
 
@@ -811,6 +826,87 @@ void OnPlayerDeath()
 	}
 }
 
+float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
+{
+	if (!Tralala::MenuTopicManager::GetSingleton()->isInDialogueState)
+		return actor->GetCameraHeight();
+
+	float headPos = 0.0f;
+
+	actor->GetTargetHeadNodePosition(&headPos);
+	if (headPos == 0.0f)
+		return actor->GetCameraHeight();
+
+	return (headPos - actor->pos.z);
+}
+
+void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
+{
+
+	return tps->ProcessCameraCollision();
+
+	//WIP, 3rd person camera collision to improve the switch pov feature
+#if 0
+	Tralala::PlayerCamera * camera = (Tralala::PlayerCamera*)tps->camera;
+
+	if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
+		&& camera->cameraRefHandle != PlayerRefHandle && g_refTarget)
+	{
+		UInt32 furnHandle = 0;
+
+		g_refTarget->processManager->GetFurnitureHandle(&furnHandle);
+		if (furnHandle != Tralala::InvalidRefHandle())
+		{
+			Tralala::TESObjectREFR* ref = nullptr;
+			Tralala::LookupRefByHandle(&furnHandle, &ref);
+
+			if (ref)
+			{
+				float furnX = ref->pos.x;
+				float furnY = ref->pos.y;
+				float furnZ = ref->pos.z;
+
+				float camX = tps->camPos.x;
+				float camY = tps->camPos.y;
+				float camZ = tps->camPos.z;
+
+				float furnWidth = ref->GetTargetWidth();
+				float furnHeight = ref->GetTargetHeight();
+
+				_MESSAGE("furn X %f Y %f Z %f", furnX, furnY, furnZ);
+				_MESSAGE("cam X %f Y %f Z %f", camX, camY, camZ);
+				_MESSAGE("furn Width %f Height %f", furnWidth, furnHeight);
+
+				ref->handleRefObject.DecRef();
+
+				if ((camX - furnX) > (furnWidth / 2))
+				{
+					_MESSAGE("Width Collision off");
+					return;
+				}
+				else if ((furnZ + furnHeight) < (camZ + 5))
+				{
+					_MESSAGE("Height Collision off");
+					return;
+				}
+				else
+				{
+					return tps->ProcessCameraCollision();
+				}
+			}
+		}
+		else
+		{
+			return tps->ProcessCameraCollision();
+		}	
+	}
+	else
+	{
+		return tps->ProcessCameraCollision();
+	}
+#endif
+}
+
 Tralala::Actor * SetObjectFade(Tralala::Actor * actor)
 {
 	Tralala::PlayerCamera * camera = Tralala::PlayerCamera::GetSingleton();
@@ -898,9 +994,7 @@ void BeginSavingHook()
 	if (player)
 	{
 		g_isNPC = player->GetIsNPCAnimVar();
-#if 1
-		_MESSAGE("g_isNPC %d", g_isNPC);
-#endif
+
 		if (player->SetIsNPCAnimVar())
 			_MESSAGE("Reset IsNPC animation variable.");
 	}
@@ -910,10 +1004,60 @@ void FinishSavingHook()
 {
 	Tralala::PlayerCharacter* player = Tralala::PlayerCharacter::GetSingleton();
 
-	_MESSAGE("g_isNPC %d", player->GetIsNPCAnimVar());
-
 	if (player && g_isNPC)
 		player->SetIsNPCAnimVar(true);
+}
+
+void HUDMenuNextFrame_Hook(Tralala::GFxMovieView* view)
+{
+	if (!Settings::bLetterBox)
+		return;
+
+	Tralala::GFxValue messagesBlock;
+	if (view->GetVariable(&messagesBlock, "_level0.HUDMovieBaseInstance.MessagesBlock"))
+	{
+		Tralala::GFxValue::DisplayInfo dispInfo;
+
+		if (messagesBlock.GetDisplayInfo(&dispInfo))
+		{
+			static bool bInitDispInfo = false;
+			static double oriPosX = 0.0f;
+			static double oriPosY = 0.0f;
+
+			if (!bInitDispInfo)
+			{
+				oriPosX = dispInfo._x;
+				oriPosY = dispInfo._y;
+				bInitDispInfo = true;
+			}
+
+			static UInt64 counter = 0;
+
+			Tralala::MenuTopicManager* mtm = Tralala::MenuTopicManager::GetSingleton();
+			if (!mtm)
+				return;
+
+			if (mtm->unkB5)
+				counter++;
+			else
+				counter = 0;
+
+			if (mtm->isInDialogueState && (counter <= Settings::uDelay))
+			{
+				if(Settings::fMessagePosX == -601.f)
+					dispInfo.SetPosition(oriPosX, Settings::fMessagePosY);
+				else
+					dispInfo.SetPosition(Settings::fMessagePosX, Settings::fMessagePosY);
+				
+				messagesBlock.SetDisplayInfo(&dispInfo);
+			}
+			else
+			{
+				dispInfo.SetPosition(oriPosX, oriPosY);
+				messagesBlock.SetDisplayInfo(&dispInfo);
+			}
+		}
+	}
 }
 
 extern "C"
@@ -960,6 +1104,7 @@ extern "C"
 		Tralala::PlayerCameraGetAddress();
 		Tralala::ControlsGetAddresses();
 		Tralala::ObjectRefGetAddresses();
+		Tralala::ScaleformUtilGetAddresses();
 		Graphics::GetAddresses();
 
 		Settings::Load();
@@ -1563,6 +1708,114 @@ extern "C"
 
 			if (!g_branchTrampoline.Write5Branch(g_finishSaveAddr, uintptr_t(code.getCode())))
 				return false;
+		}
+
+		{
+			struct InstallHookCameraHeightCode : Xbyak::CodeGenerator {
+				InstallHookCameraHeightCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x20);
+
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x20);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(funcAddr);
+
+					L(retnLabel);
+					dq(g_thirdCamHeightAddr + 0x5);
+				}
+			};
+
+			void* codeBuf = g_localTrampoline.StartAlloc();
+			InstallHookCameraHeightCode code(codeBuf, GetFnAddr(GetThirdPersonCameraHeight_Hook));
+			g_localTrampoline.EndAlloc(code.getCurr());
+
+
+			if (!g_branchTrampoline.Write5Branch(g_thirdCamHeightAddr, uintptr_t(code.getCode())))
+				return false;
+		}
+
+		{
+			struct InstallHookThirdCamColCode : Xbyak::CodeGenerator {
+				InstallHookThirdCamColCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x20);
+
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x20);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(funcAddr);
+
+					L(retnLabel);
+					dq(g_thirdCamColAddr + 0x5);
+				}
+			};
+
+			void* codeBuf = g_localTrampoline.StartAlloc();
+			InstallHookThirdCamColCode code(codeBuf, GetFnAddr(TPCamProcessCollision_Hook));
+			g_localTrampoline.EndAlloc(code.getCurr());
+
+
+			if (!g_branchTrampoline.Write5Branch(g_thirdCamColAddr, uintptr_t(code.getCode())))
+				return false;
+		}
+
+		{
+			struct InstallHookTestHUDMenu1Code : Xbyak::CodeGenerator {
+				InstallHookTestHUDMenu1Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					push(r9);
+					push(r8);
+					push(rdx);
+					push(rcx);
+					sub(rsp, 0x20);
+
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x20);
+					pop(rcx);
+					pop(rdx);
+					pop(r8);
+					pop(r9);
+
+					mov(qword[rsp + 0x28], 0);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(funcAddr);
+
+					L(retnLabel);
+					dq(g_hudMenuNextFrameAddr + 0x5);
+				}
+			};
+
+			void* codeBuf = g_localTrampoline.StartAlloc();
+			InstallHookTestHUDMenu1Code code(codeBuf, GetFnAddr(HUDMenuNextFrame_Hook));
+			g_localTrampoline.EndAlloc(code.getCurr());
+
+
+			if (!g_branchTrampoline.Write5Branch(g_hudMenuNextFrameAddr, uintptr_t(code.getCode())))
+				return false;
+
+			SafeWrite32(g_hudMenuNextFrameAddr + 0x5, NOP32);
 		}
 
 		Graphics::InstallHook();

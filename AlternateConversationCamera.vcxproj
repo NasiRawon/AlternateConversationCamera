@@ -162,6 +162,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjectRef.cpp" />
+    <ClCompile Include="ScaleformUtils.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
@@ -171,6 +172,7 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="ObjectRef.h" />
     <ClInclude Include="PatternScanner.h" />
+    <ClInclude Include="ScaleformUtils.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Utils.h" />

@@ -14,6 +14,7 @@ namespace Tralala
 	extern uintptr_t g_iSizeWDisplayAddr;
 	extern uintptr_t g_iSizeHDisplayAddr;
 	extern uintptr_t g_deltaTimeAddr;
+	extern uintptr_t g_sneakHeightMultAddr;
 	extern uintptr_t g_menuManagerAddr;
 
 	void UtilsGetAddresses();
@@ -118,7 +119,7 @@ namespace Tralala
 		tArray<void *>	unk98;						// 98
 		UInt8	unkB0;								// B0	- dialouge init'd by NPCs
 		bool	isInDialogueState;					// B1
-		UInt8	unkB2;
+		bool	unkB2;			// true, if doesn't return to dialogue list
 		UInt8	unkB3;
 		UInt8	unkB4;
 		UInt8	unkB5;
