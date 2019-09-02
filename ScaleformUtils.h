@@ -314,7 +314,7 @@ namespace Tralala
 		};
 		//#pragma pack (pop)
 
-		// 4
+		// 8
 		class ObjectInterface
 		{
 		public:
@@ -326,12 +326,18 @@ namespace Tralala
 		Data			data;				// 10
 
 		UInt32	GetType(void) const { return type & kMask_Type; }
+		bool	IsDisplayObject(void) const { return GetType() == kType_DisplayObject; }
 		bool	IsManaged(void) const { return (type & kTypeFlag_Managed) != 0; }
 		void	CleanManaged(void);
 		void	AddManaged(void);
 		void	AddManaged(const GFxValue& src);
 		bool	GetDisplayInfo(DisplayInfo* displayInfo);
 		bool	SetDisplayInfo(DisplayInfo* displayInfo);
+		bool	GetMember(const char* name, GFxValue* value);
+		bool	SetMember(const char* name, GFxValue* value);
+		bool	SetText(const char* text, bool html);
+		void	SetString(const char* value);
+		const char* GetString(void) const;
 	};
 
 }

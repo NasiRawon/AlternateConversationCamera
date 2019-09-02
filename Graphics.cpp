@@ -369,9 +369,8 @@ namespace Graphics
 #endif
 	}
 
-	void InstallHook()
+	bool InstallHook()
 	{
-#if 1
 		{
 			struct InstallHookPresent_Code : Xbyak::CodeGenerator {
 				InstallHookPresent_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
@@ -407,11 +406,11 @@ namespace Graphics
 			InstallHookPresent_Code code(codeBuf, GetFnAddr(Tralala::PresentHook));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
-			g_branchTrampoline.Write5Branch(g_presentAddr, uintptr_t(code.getCode()));
+			if (!g_branchTrampoline.Write5Branch(g_presentAddr, uintptr_t(code.getCode())))
+				return false;
 
 			SafeWrite16(g_presentAddr + 0x5, NOP16);
 		}
-#endif
 
 		{
 			struct InstallHookDtor_Code : Xbyak::CodeGenerator {
@@ -450,8 +449,11 @@ namespace Graphics
 			InstallHookDtor_Code code(codeBuf, GetFnAddr(Tralala::CleanupD3D11));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
-			g_branchTrampoline.Write5Branch(g_cleanAddr, uintptr_t(code.getCode()));
+			if (!g_branchTrampoline.Write5Branch(g_cleanAddr, uintptr_t(code.getCode())))
+				return false;
 		}
+
+		return true;
 	}
 }
 

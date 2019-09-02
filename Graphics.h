@@ -29,5 +29,5 @@ namespace Tralala
 namespace Graphics
 {
 	void GetAddresses();
-	void InstallHook();
+	bool InstallHook();
 }

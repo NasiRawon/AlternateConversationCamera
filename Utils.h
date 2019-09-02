@@ -15,7 +15,6 @@ namespace Tralala
 	extern uintptr_t g_iSizeHDisplayAddr;
 	extern uintptr_t g_deltaTimeAddr;
 	extern uintptr_t g_sneakHeightMultAddr;
-	extern uintptr_t g_menuManagerAddr;
 
 	void UtilsGetAddresses();
 
@@ -172,20 +171,4 @@ namespace Tralala
 	};
 
 	typedef StringCache::Ref BSFixedString;
-
-	// 018
-	class MenuTableItem
-	{
-	public:
-		BSFixedString	name;				// 000
-		void* menuInstance;		// 008	0 if the menu is not currently open
-		void* menuConstructor;	// 010
-
-		bool operator==(const MenuTableItem& rhs) const { return name == rhs.name; }
-		bool operator==(const BSFixedString a_name) const { return name == a_name; }
-		operator UInt64() const { return (UInt64)name.data; }
-
-		static UInt32 GetHash(BSFixedString* key);
-	};
-
 }

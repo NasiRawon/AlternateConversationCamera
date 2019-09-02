@@ -161,6 +161,7 @@
     <ClCompile Include="Controls.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Menus.cpp" />
     <ClCompile Include="ObjectRef.cpp" />
     <ClCompile Include="ScaleformUtils.cpp" />
     <ClCompile Include="Settings.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Controls.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Menus.h" />
     <ClInclude Include="ObjectRef.h" />
     <ClInclude Include="PatternScanner.h" />
     <ClInclude Include="ScaleformUtils.h" />

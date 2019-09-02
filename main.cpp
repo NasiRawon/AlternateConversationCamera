@@ -11,6 +11,7 @@
 #include "Settings.h"
 #include "ObjectRef.h"
 #include "Graphics.h"
+#include "Menus.h"
 #include "ScaleformUtils.h"
 
 #include <shlobj.h>
@@ -55,7 +56,6 @@ uintptr_t g_beginSaveAddr = 0;
 uintptr_t g_finishSaveAddr = 0;
 uintptr_t g_thirdCamHeightAddr = 0;
 uintptr_t g_thirdCamColAddr = 0;
-uintptr_t g_hudMenuNextFrameAddr = 0;
 
 void MainGetAddresses()
 {
@@ -118,9 +118,6 @@ void MainGetAddresses()
 	g_thirdCamHeightAddr = (uintptr_t)scan_memory(camHeightPattern, 0x71, false);
 
 	g_thirdCamColAddr = (uintptr_t)scan_memory(camHeightPattern, 0x7B, true);
-
-	const std::array<BYTE, 9> testhudpattern = { 0x90, 0x89, 0x1C, 0x2F, 0x48, 0x8B, 0x5C, 0x24, 0x68 };
-	g_hudMenuNextFrameAddr = (uintptr_t)scan_memory(testhudpattern, 0x93, false);
 }
 
 
@@ -1008,58 +1005,6 @@ void FinishSavingHook()
 		player->SetIsNPCAnimVar(true);
 }
 
-void HUDMenuNextFrame_Hook(Tralala::GFxMovieView* view)
-{
-	if (!Settings::bLetterBox)
-		return;
-
-	Tralala::GFxValue messagesBlock;
-	if (view->GetVariable(&messagesBlock, "_level0.HUDMovieBaseInstance.MessagesBlock"))
-	{
-		Tralala::GFxValue::DisplayInfo dispInfo;
-
-		if (messagesBlock.GetDisplayInfo(&dispInfo))
-		{
-			static bool bInitDispInfo = false;
-			static double oriPosX = 0.0f;
-			static double oriPosY = 0.0f;
-
-			if (!bInitDispInfo)
-			{
-				oriPosX = dispInfo._x;
-				oriPosY = dispInfo._y;
-				bInitDispInfo = true;
-			}
-
-			static UInt64 counter = 0;
-
-			Tralala::MenuTopicManager* mtm = Tralala::MenuTopicManager::GetSingleton();
-			if (!mtm)
-				return;
-
-			if (mtm->unkB5)
-				counter++;
-			else
-				counter = 0;
-
-			if (mtm->isInDialogueState && (counter <= Settings::uDelay))
-			{
-				if(Settings::fMessagePosX == -601.f)
-					dispInfo.SetPosition(oriPosX, Settings::fMessagePosY);
-				else
-					dispInfo.SetPosition(Settings::fMessagePosX, Settings::fMessagePosY);
-				
-				messagesBlock.SetDisplayInfo(&dispInfo);
-			}
-			else
-			{
-				dispInfo.SetPosition(oriPosX, oriPosY);
-				messagesBlock.SetDisplayInfo(&dispInfo);
-			}
-		}
-	}
-}
-
 extern "C"
 {
 
@@ -1105,6 +1050,7 @@ extern "C"
 		Tralala::ControlsGetAddresses();
 		Tralala::ObjectRefGetAddresses();
 		Tralala::ScaleformUtilGetAddresses();
+		Menus::GetAddresses();
 		Graphics::GetAddresses();
 
 		Settings::Load();
@@ -1774,50 +1720,7 @@ extern "C"
 				return false;
 		}
 
-		{
-			struct InstallHookTestHUDMenu1Code : Xbyak::CodeGenerator {
-				InstallHookTestHUDMenu1Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					push(r9);
-					push(r8);
-					push(rdx);
-					push(rcx);
-					sub(rsp, 0x20);
-
-					call(ptr[rip + funcLabel]);
-
-					add(rsp, 0x20);
-					pop(rcx);
-					pop(rdx);
-					pop(r8);
-					pop(r9);
-
-					mov(qword[rsp + 0x28], 0);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(funcAddr);
-
-					L(retnLabel);
-					dq(g_hudMenuNextFrameAddr + 0x5);
-				}
-			};
-
-			void* codeBuf = g_localTrampoline.StartAlloc();
-			InstallHookTestHUDMenu1Code code(codeBuf, GetFnAddr(HUDMenuNextFrame_Hook));
-			g_localTrampoline.EndAlloc(code.getCurr());
-
-
-			if (!g_branchTrampoline.Write5Branch(g_hudMenuNextFrameAddr, uintptr_t(code.getCode())))
-				return false;
-
-			SafeWrite32(g_hudMenuNextFrameAddr + 0x5, NOP32);
-		}
-
+		Menus::InstallHook();
 		Graphics::InstallHook();
 
 		SafeWrite8(g_firstFOVAddr + 0x3, 0xB8);	// change xmm6 to xmm7
