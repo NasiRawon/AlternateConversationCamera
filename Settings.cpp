@@ -15,7 +15,6 @@ bool	Settings::bConversationHT = true;
 bool	Settings::bLetterBox = true;
 int		Settings::uLetterBoxThickness = 175;
 int		Settings::uLetterBoxSpeed = 5;
-int		Settings::uDelay = 5;
 float	Settings::fCameraSpeed = 500.0f;
 float	Settings::fAddOverShoulderPosX = 50.0f;
 float	Settings::fAddOverShoulderPozZ = -5.0f;
@@ -61,7 +60,6 @@ void Settings::Load()
 	Settings::bLetterBox = GetPrivateProfileInt(L"Settings", L"bLetterBox", 1, thisPath.c_str());
 	Settings::uLetterBoxThickness = GetPrivateProfileInt(L"Settings", L"uLetterBoxThickness", 175, thisPath.c_str());
 	Settings::uLetterBoxSpeed = GetPrivateProfileInt(L"Settings", L"uLetterBoxSpeed", 5, thisPath.c_str());
-	Settings::uDelay = GetPrivateProfileInt(L"Settings", L"uDelay", 5, thisPath.c_str());
 	Settings::fCameraSpeed = GetPrivateProfileInt(L"Settings", L"fCameraSpeed", 500, thisPath.c_str());
 	Settings::f1stZoom = GetPrivateProfileInt(L"Settings", L"u1stZoom", 50, thisPath.c_str());
 	Settings::f3rdZoom = GetPrivateProfileInt(L"Settings", L"u3rdZoom", 75, thisPath.c_str());

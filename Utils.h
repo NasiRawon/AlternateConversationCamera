@@ -15,6 +15,10 @@ namespace Tralala
 	extern uintptr_t g_iSizeHDisplayAddr;
 	extern uintptr_t g_deltaTimeAddr;
 	extern uintptr_t g_sneakHeightMultAddr;
+	extern uintptr_t g_isDialogueMenuCloseAddr;
+	extern uintptr_t g_containerHandle;
+	extern uintptr_t g_barterHandle;
+	extern bool g_isTrainingMenu;
 
 	void UtilsGetAddresses();
 
@@ -85,30 +89,28 @@ namespace Tralala
 			TESQuest*			quest;			// 10
 			TESTopicInfo*		topicInfo;		// 18
 			TESTopic*			topic;			// 20
-			DialogueInfo*		parrent;		// 28
+			DialogueInfo*		unk28;			// 28
+			UInt32				unk30[2];		// 30
+			TESTopic*			unk38;			// 38, same as topic above??
 		};
-		STATIC_ASSERT(offsetof(DialogueInfo, parrent) == 0x28);
+		STATIC_ASSERT(offsetof(DialogueInfo, unk28) == 0x28);
 
 		struct Dialogue
 		{	
 			BSString		topicText;		// 00
-			UInt64			unk10;			// 10
+			bool			unk10;			// 10
 			DialogueInfo	info;			// 18
 		};
 		STATIC_ASSERT(offsetof(Dialogue, info) == 0x18);
-
-		struct DialogueList
-		{
-			Dialogue*		currentDialogue;
-		};
+		STATIC_ASSERT(sizeof(Dialogue) == 0x58);
 
 		BSTEventSink<void>	playerPositionEvent;	// 08
 		UInt64				unk10;					// 10
-		DialogueList*		dialogueList;
-		UInt64				unk20;
+		tList<Dialogue>*	clickedDialogueList;	// 18, "clicked dialogue"
+		tList<Dialogue>*	initDialogueList;		// 20, all available "dialogue", game will iterate through this then assign pointer above
 		UInt64				unk28;
 		UInt64				unk30;
-		Dialogue*			dialogue;				// 38
+		Dialogue*			currentDialogue;		// 38
 		CRITICAL_SECTION	critSection;			// 40
 		UInt32	talkingHandle;						// 68	 - init'd to g_InvalidRefHandler
 		UInt32	handle2;							// 6C	 - init'd to g_InvalidRefHandler
@@ -118,7 +120,7 @@ namespace Tralala
 		tArray<void *>	unk98;						// 98
 		UInt8	unkB0;								// B0	- dialouge init'd by NPCs
 		bool	isInDialogueState;					// B1
-		bool	unkB2;			// true, if doesn't return to dialogue list
+		bool	unkB2;			// true, if dialogue's flag contains goodbye
 		UInt8	unkB3;
 		UInt8	unkB4;
 		UInt8	unkB5;
@@ -134,7 +136,7 @@ namespace Tralala
 		static MenuTopicManager * GetSingleton();
 		TESObjectREFR* GetDialogueTarget();
 	};
-	STATIC_ASSERT(offsetof(MenuTopicManager, dialogue) == 0x38);
+	STATIC_ASSERT(offsetof(MenuTopicManager, currentDialogue) == 0x38);
 	STATIC_ASSERT(offsetof(MenuTopicManager, talkingHandle) == 0x68);
 
 	// 80808

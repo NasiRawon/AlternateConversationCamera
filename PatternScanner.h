@@ -103,17 +103,22 @@ const BYTE* scan_memory_data_internal(void* address_low, std::size_t nbytes,
 	}
 	if (addresses_found)
 	{
+
 		if (positive_offset)
 			addresses_found += offset;
 		else
 			addresses_found -= offset;
 
 		DWORD new_address = 0;
+		BYTE new_size = size;
 
-		auto it = std::find(addresses_found, addresses_found + size, *(addresses_found + start));
-		if (it != addresses_found + size)
+		if ((size - start) != 4)
+			new_size = size - 1;		
+
+		auto it = std::find(addresses_found, addresses_found + new_size, *(addresses_found + start));
+		if (it != addresses_found + new_size)
 		{
-			for (int i = 0; i < (size - start); i++)
+			for (int i = 0; i < (new_size - start); i++)
 			{
 				new_address += (*(it + i) << (i << 3));
 			}

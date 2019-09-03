@@ -12,6 +12,9 @@ namespace Tralala
 	uintptr_t g_iSizeHDisplayAddr = 0;
 	uintptr_t g_deltaTimeAddr = 0;
 	uintptr_t g_sneakHeightMultAddr = 0;
+	uintptr_t g_isDialogueMenuCloseAddr = 0;
+	uintptr_t g_containerHandle = 0;
+	uintptr_t g_barterHandle = 0;
 	//uintptr_t g_unkcellinfoAddr = 0;
 
 	void UtilsGetAddresses()
@@ -39,6 +42,15 @@ namespace Tralala
 
 		const std::array<BYTE, 6> sneakpattern = { 0x48, 0x8B, 0xC3, 0x89, 0x4B, 0x04 };
 		g_sneakHeightMultAddr = (uintptr_t)scan_memory_data(sneakpattern, 0x25, true, 0x4, 0x8);
+
+		const std::array<BYTE, 5> dialpattern = { 0x32, 0xC9, 0x45, 0x84, 0xF6 };
+		g_isDialogueMenuCloseAddr = (uintptr_t)scan_memory_data(dialpattern, 0x1E, true, 0x2, 0x7);
+
+		const std::array<BYTE, 6> contpattern = { 0x48, 0x3B, 0xD0, 0x0F, 0x94, 0xC2 };
+		g_containerHandle = (uintptr_t)scan_memory_data(contpattern, 0x3B, true, 0x2, 0x6);
+
+		const std::array<BYTE, 7> bartpattern = { 0x4C, 0x8B, 0xEF, 0x48, 0x8B, 0x43, 0x28 };
+		g_barterHandle = (uintptr_t)scan_memory_data(bartpattern, 0x33, false, 0x3, 0x7);
 
 		//static const BYTE payload[] = { 0x0F, 0x94, 0xC0, 0x88, 0x41, 0x0A };
 		//std::vector<BYTE> pattern(payload, payload + sizeof(payload) / sizeof(payload[0]));

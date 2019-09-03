@@ -308,14 +308,17 @@ namespace Tralala
 			if (!mtm)
 				return *(void**)g_unkStructAddr;
 
-			if (mtm->unkB5)
-				counter++;
-			else
-				counter = 0;
-
 			float step = (speed / 0.016667f) * (*(float*)g_deltaTimeAddr);
 
-			if (mtm->isInDialogueState && (counter <= Settings::uDelay))
+			bool isDialogueMenuClose = *(bool*)g_isDialogueMenuCloseAddr;
+
+			UInt32 containerHandle = *(UInt32*)g_containerHandle;
+			UInt32 barterHandle = *(UInt32*)g_barterHandle;
+			UInt32 activeHandle = containerHandle;
+			if (barterHandle)
+				activeHandle = barterHandle;
+
+			if (mtm->isInDialogueState && !isDialogueMenuClose && !activeHandle && !g_isTrainingMenu)
 			{
 				DrawLetterBox(pContext, 12, srcHeight);
 

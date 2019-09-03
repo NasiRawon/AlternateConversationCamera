@@ -13,7 +13,6 @@ struct Settings
 	static float	fMessagePosY;
 	static int		uLetterBoxThickness;
 	static int		uLetterBoxSpeed;
-	static int		uDelay;
 	static bool		bLockOn;
 	static bool		bForceFirstPerson;
 	static bool		bStopNPCMove;
