@@ -11,8 +11,9 @@ namespace Tralala
 	uintptr_t g_setCamTargetAddr = 0;
 	uintptr_t g_forceFirstPersonAddr = 0;
 	uintptr_t g_updateThirdPersonAddr = 0;
-	uintptr_t g_isCollideAddr = 0;
+	uintptr_t g_getPenetrationAddr = 0;
 	uintptr_t g_processCamColAddr = 0;
+	uintptr_t g_getClosestPointAddr = 0;
 
 	void PlayerCameraGetAddress()
 	{
@@ -31,13 +32,13 @@ namespace Tralala
 		const std::array<BYTE, 8> camColpattern = { 0xF3, 0x0F, 0x59, 0x5F, 0x18, 0x0F, 0x28, 0xC7 };
 		g_processCamColAddr = (uintptr_t)scan_memory_data(camColpattern, 0x7B, true, 0x1, 0x5);
 
+		const std::array<BYTE, 8> penetpattern = { 0xF3, 0x0F, 0x10, 0x55, 0x80, 0x0F, 0x28, 0xCA };
+		g_getPenetrationAddr = (uintptr_t)scan_memory_data(penetpattern, 0x7D, true, 0x1, 0x5);
+
+		g_getClosestPointAddr = (uintptr_t)scan_memory_data(penetpattern, 0xF0, false, 0x1, 0x5);
 		//static const BYTE updateThirdPayload[] = { 0x41, 0x0F, 0xB6, 0xD1, 0x41, 0x0F, 0xB6, 0xD9 };
 		//std::vector<BYTE> updateThirdpattern(updateThirdPayload, updateThirdPayload + sizeof(updateThirdPayload) / sizeof(updateThirdPayload[0]));
 		//g_updateThirdPersonAddr = (uintptr_t)scan_memory_data(updateThirdpattern, 0x1F, true, 0x1, 0x5);
-
-		//static const BYTE isCollidePayload[] = { 0xF3, 0x0F, 0x10, 0x55, 0x80, 0x0F, 0x28, 0xCA };
-		//std::vector<BYTE> isCollidedpattern(isCollidePayload, isCollidePayload + sizeof(isCollidePayload) / sizeof(isCollidePayload[0]));
-		//g_isCollideAddr = (uintptr_t)scan_memory_data(isCollidedpattern, 0x7D, true, 0x1, 0x5);
 		
 		//static const BYTE pushTargetPayload[] = { 0x48, 0x83, 0xC1, 0x40, 0x48, 0x8D, 0x53, 0x28 };
 		//std::vector<BYTE> pushTargetpattern(pushTargetPayload, pushTargetPayload + sizeof(pushTargetPayload) / sizeof(pushTargetPayload[0]));
@@ -235,7 +236,7 @@ namespace Tralala
 		else
 		{
 			ThirdPersonState * tps = GetThirdPersonCamera();
-			tps->GetCameraPosition(&camPos);
+			camPos = tps->camPos;
 		}
 
 		float dx = neckPos.x - camPos.x;
@@ -245,11 +246,23 @@ namespace Tralala
 		return sqrt(dx*dx + dy*dy + dz*dz);
 	}
 
-	bool PlayerCamera::IsCollide(Tralala::Actor * target, NiPoint3* sourcePos, float radius, float unk)
+	bool PlayerCamera::GetPenetration(Actor * target, NiPoint3* sourcePos, float radiusToCheck, 
+		float offsetActorFromGround)
 	{
-		typedef bool(*IsCollide_t)(SimpleShapePhantom* phantom, Tralala::Actor * target, NiPoint3* sourcePos, float radius, float unk);
-		IsCollide_t IsCollide = (IsCollide_t)g_isCollideAddr;
+		typedef bool(*GetPenetration_t)(SimpleShapePhantom*, Actor *, NiPoint3*, float, float);
+		GetPenetration_t GetPenetration = (GetPenetration_t)g_getPenetrationAddr;
 
-		return IsCollide(simpleShapePhantoms, target, sourcePos, radius, unk);
+		return GetPenetration(simpleShapePhantoms, target, sourcePos, radiusToCheck, offsetActorFromGround);
+	}
+
+	bool PlayerCamera::GetClosestPoint(void* bhkWorldM, NiPoint3* sourcePos, NiPoint3* resultPos,
+		Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck)
+	{
+		typedef bool(*GetClosestPoint_t)(SimpleShapePhantom*, void*, NiPoint3*, 
+			NiPoint3*, Havok::hkpRootCdPoint*, Actor**, float);
+		GetClosestPoint_t GetClosestPoint = (GetClosestPoint_t)g_getClosestPointAddr;
+
+		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos, 
+			resultInfo, resultActor, radiusToCheck);
 	}
 }

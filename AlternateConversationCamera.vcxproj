@@ -160,6 +160,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Controls.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="Havok.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Menus.cpp" />
     <ClCompile Include="ObjectRef.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Controls.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Havok.h" />
     <ClInclude Include="Menus.h" />
     <ClInclude Include="ObjectRef.h" />
     <ClInclude Include="PatternScanner.h" />

@@ -19,4 +19,9 @@ namespace Tralala
 	{
 		return *(MenuControls**)g_menuControlsAddr;
 	}
+
+	PlayerControls* PlayerControls::GetSingleton()
+	{
+		return *(PlayerControls**)g_playerControlsAddr;
+	}
 }

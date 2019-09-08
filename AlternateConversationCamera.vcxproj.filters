@@ -42,6 +42,9 @@
     <ClCompile Include="Menus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Havok.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -72,6 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Menus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Havok.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -19,6 +19,7 @@ namespace Tralala
 	uintptr_t g_sneakingHeightAddr = 0;
 	uintptr_t g_cameraHeightAddr = 0;
 	uintptr_t g_getFurnHandleAddr = 0;
+	uintptr_t g_getbhkWorldMAddr = 0;
 
 	void ObjectRefGetAddresses()
 	{
@@ -68,6 +69,9 @@ namespace Tralala
 
 		const std::array<BYTE, 8> furnpattern = { 0x48, 0x05, 0x08, 0x02, 0x00, 0x00, 0x8B, 0x00 };
 		g_getFurnHandleAddr = (uintptr_t)scan_memory(furnpattern, 0x9, false);
+
+		const std::array<BYTE, 8> bhkWorldpattern = { 0x45, 0x0F, 0xB6, 0xC1, 0x41, 0x0F, 0xB6, 0xC9 };
+		g_getbhkWorldMAddr = (uintptr_t)scan_memory_data(bhkWorldpattern, 0x1F, true, 0x1, 0x5);
 	}
 
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
@@ -144,6 +148,17 @@ namespace Tralala
 	{	
 		NiPoint3 p1, p2;
 		return GetBoundRightBackTop(&p1)->x - GetBoundLeftFrontBottom(&p2)->x;
+	}
+
+	void* TESObjectREFR::GetbhkWorldM()
+	{
+		if (!parentCell)
+			return nullptr;
+
+		typedef void* (*GetbhkWorldM_t)(TESObjectCELL*);
+		GetbhkWorldM_t GetbhkWorldM = (GetbhkWorldM_t)g_getbhkWorldMAddr;
+
+		return GetbhkWorldM(parentCell);
 	}
 
 	bool Actor::IsOnMount()
@@ -364,7 +379,7 @@ namespace Tralala
 		return IsCasting(this, spell);
 	}
 
-	bool Actor::GetTargetHeadNodePosition(float * pos)
+	bool Actor::GetTargetHeadNodePosition(NiPoint3 * pos, bool * compare)
 	{
 		if (!processManager->middleProcess)
 			return false;
@@ -374,7 +389,24 @@ namespace Tralala
 
 		NiNode* headNode = (NiNode*)processManager->middleProcess->unk158;
 
-		*pos = headNode->m_worldTransform.pos.z;
+		if (*compare)
+		{
+			BSFixedString headName("NPC Head [Head]");
+			BSFixedString name(headNode->m_name);
+			if (name == headName)
+				*compare = true;
+			else
+				*compare = false;
+
+			name.Release();
+			headName.Release();
+		}
+
+		pos->x = headNode->m_worldTransform.pos.x;
+		pos->y = headNode->m_worldTransform.pos.y;
+		pos->z = headNode->m_worldTransform.pos.z;
+
+		
 
 		return true;
 	}

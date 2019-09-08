@@ -13,6 +13,7 @@
 #include "Graphics.h"
 #include "Menus.h"
 #include "ScaleformUtils.h"
+#include "Havok.h"
 
 #include <shlobj.h>
 
@@ -23,7 +24,7 @@ PluginHandle			g_pluginHandle = kPluginHandle_Invalid;
 
 void * g_moduleHandle = nullptr;
 
-const float PI = 3.1415927;
+const float PI = 3.1415927f;
 
 float g_firstDistance = 0.0f;
 float g_thirdDistance = 0.0f;
@@ -32,6 +33,7 @@ float g_firstfovTo = 0.0f;
 float g_delay = 0.0f;
 int g_fovStep = 0;
 bool g_isNPC = false;
+bool g_switchProcess = false;
 
 Tralala::Actor* g_refTarget = nullptr;
 
@@ -56,6 +58,7 @@ uintptr_t g_beginSaveAddr = 0;
 uintptr_t g_finishSaveAddr = 0;
 uintptr_t g_thirdCamHeightAddr = 0;
 uintptr_t g_thirdCamColAddr = 0;
+uintptr_t g_thirdCamUpdateAddr = 0;
 
 void MainGetAddresses()
 {
@@ -118,6 +121,9 @@ void MainGetAddresses()
 	g_thirdCamHeightAddr = (uintptr_t)scan_memory(camHeightPattern, 0x71, false);
 
 	g_thirdCamColAddr = (uintptr_t)scan_memory(camHeightPattern, 0x7B, true);
+
+	const std::array<BYTE, 9> onUpdatePattern = { 0x48, 0x8D, 0x54, 0x24, 0x38, 0x48, 0x8B, 0x4B, 0x10 };
+	g_thirdCamUpdateAddr = (uintptr_t)scan_memory(onUpdatePattern, 0x99, false);
 }
 
 
@@ -170,6 +176,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 	static UInt32 cameraStateIDStarter = 0;
 	static bool zoom = false;
 	float minZoom = *(float*)g_minCurrentZoomAddr;
+	g_switchProcess = false;
 
 	Tralala::ThirdPersonState* tps = camera->GetThirdPersonCamera();
 
@@ -635,7 +642,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 				camera->firstPersonFOV += diff2 / g_fovStep;
 			}
 
-			if (g_refTarget && camera->cameraRefHandle == PlayerRefHandle)
+			if (g_refTarget && camera->cameraRefHandle == PlayerRefHandle && !g_switchProcess)
 				RotateCamera(camera, player, g_refTarget, controller, false);
 
 			g_fovStep--;
@@ -646,7 +653,6 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 			{
 				if (Settings::bLockOn || mtm->talkingHandle == 0)
 				{
-					static Tralala::Actor* playerAsTarget = nullptr;
 					static bool switchReady = false;
 
 					float prefDist = Settings::f1stZoom;
@@ -668,7 +674,6 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 							g_firstDistance = distance;
 						}
 
-						playerAsTarget = nullptr;
 					}
 					else
 					{
@@ -729,8 +734,8 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 											&& g_delay == 0.0f)
 										{
 											camera->SetCameraTarget(g_refTarget);
-											playerAsTarget = player;
 											switchReady = false;
+											g_switchProcess = true;
 										}
 									}
 								}
@@ -761,44 +766,41 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 					{
 						if (Settings::bSwitchTarget)
 						{
-							static float targetDist = 0.0f;
-
-							if (Settings::bForceThirdPerson)
+							if (!g_switchProcess)
 							{
-								targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
+								static float targetDist = 0.0f;
+
+								if (Settings::bForceThirdPerson)
+								{
+									targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
+								}
+								else
+								{
+									if (camera->IsCameraFirstPerson())
+										RotateCamera(camera, player, g_refTarget, controller, false);
+									else
+										targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
+								}
+
+								if (targetDist <= 0.001f)
+									switchReady = true;
 							}
 							else
 							{
-								if (camera->IsCameraFirstPerson())
-									RotateCamera(camera, player, g_refTarget, controller, false);
-								else
-									targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
-							}
-
-							if (targetDist <= 0.001f)
 								switchReady = true;
+							}
+							
 						}
 						else
 						{
 							RotateCamera(camera, player, g_refTarget, controller, false);
 						}
 					}
-					else
-					{
-						if (playerAsTarget)
-						{
-							static float playerNeckDist = 0.0f;
-
-							playerNeckDist = RotateCamera(camera, g_refTarget, playerAsTarget, controller, true);
-							if (playerNeckDist <= 0.0005f)
-								playerAsTarget = nullptr;
-						}
-					}	
 				}
 				else
 				{
 					float crosshairDist = RotateCamera(camera, player, g_refTarget, controller, true);
-					if (crosshairDist <= 0.0005f)
+					if (crosshairDist <= 0.001f)
 						g_refTarget = nullptr;
 				}
 			}
@@ -828,98 +830,219 @@ float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 	if (!Tralala::MenuTopicManager::GetSingleton()->isInDialogueState)
 		return actor->GetCameraHeight();
 
-	float headPos = 0.0f;
+	NiPoint3 headPos;
+	bool ret = false;
 
-	actor->GetTargetHeadNodePosition(&headPos);
-	if (headPos == 0.0f)
+	actor->GetTargetHeadNodePosition(&headPos, &ret);
+	if (headPos.z == 0.0f)
 		return actor->GetCameraHeight();
 
-	return (headPos - actor->pos.z);
+	return (headPos.z - actor->pos.z);
 }
 
 void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 {
+	if (!Settings::bSwitchTarget)
+		return tps->ProcessCameraCollision();
 
-	return tps->ProcessCameraCollision();
+	Tralala::PlayerCharacter* player = Tralala::PlayerCharacter::GetSingleton();
+	Tralala::PlayerCamera* camera = (Tralala::PlayerCamera*)tps->camera;
 
-	//WIP, 3rd person camera collision to improve the switch pov feature
-#if 0
-	Tralala::PlayerCamera * camera = (Tralala::PlayerCamera*)tps->camera;
+	static bool isPCCollided = false;
+	static bool isNPCCollided = false;
+	static float curDistance = 0.0f;
 
-	if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
-		&& camera->cameraRefHandle != PlayerRefHandle && g_refTarget)
+	if (Tralala::MenuTopicManager::GetSingleton()->isInDialogueState && g_refTarget && player->parentCell)
 	{
-		UInt32 furnHandle = 0;
-
-		g_refTarget->processManager->GetFurnitureHandle(&furnHandle);
-		if (furnHandle != Tralala::InvalidRefHandle())
+		if (camera->cameraRefHandle != PlayerRefHandle)
 		{
-			Tralala::TESObjectREFR* ref = nullptr;
-			Tralala::LookupRefByHandle(&furnHandle, &ref);
+			NiPoint3 targetHeadPos;
+			bool targetHeadPosRet = false;
+			player->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet);
 
-			if (ref)
+			NiPoint3 headPos;
+			bool headPosRet = true;
+			if (!g_refTarget->GetTargetHeadNodePosition(&headPos, &headPosRet))
+				g_refTarget->GetTargetBonePosition(&headPos);
+
+			NiPoint3 resultPos;
+			resultPos = tps->camPos;
+
+			Havok::hkpRootCdPoint resultInfo;
+			Tralala::Actor* resultActor = nullptr;
+
+			if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+				&resultActor, 1.0f))
 			{
-				float furnX = ref->pos.x;
-				float furnY = ref->pos.y;
-				float furnZ = ref->pos.z;
-
-				float camX = tps->camPos.x;
-				float camY = tps->camPos.y;
-				float camZ = tps->camPos.z;
-
-				float furnWidth = ref->GetTargetWidth();
-				float furnHeight = ref->GetTargetHeight();
-
-				_MESSAGE("furn X %f Y %f Z %f", furnX, furnY, furnZ);
-				_MESSAGE("cam X %f Y %f Z %f", camX, camY, camZ);
-				_MESSAGE("furn Width %f Height %f", furnWidth, furnHeight);
-
-				ref->handleRefObject.DecRef();
-
-				if ((camX - furnX) > (furnWidth / 2))
+#if 0
+				NiAVObject * niObject = resultInfo.hkpCollidableB->GetNiObject();
+				if (niObject)
 				{
-					_MESSAGE("Width Collision off");
-					return;
+					_MESSAGE("__PLAYER__ name %s",
+						niObject->m_name);
 				}
-				else if ((furnZ + furnHeight) < (camZ + 5))
+#endif
+				
+				isPCCollided = true;
+			}
+
+			if (isPCCollided)
+			{
+				NiPoint3 offset(Settings::fHumanCamOffsetX, 
+					Settings::fHumanCamOffsetY, 
+					Settings::fHumanCamOffsetZ);
+				if (!headPosRet)
 				{
-					_MESSAGE("Height Collision off");
-					return;
+					offset.x = Settings::fCreatureCamOffsetX;
+					offset.y = Settings::fCreatureCamOffsetY;
+					offset.z = Settings::fCreatureCamOffsetZ;
 				}
-				else
+
+				NiPoint3 ret;
+				ret = g_refTarget->loadedState->node->m_worldTransform.rot* offset;
+				tps->camPos = headPos + ret;
+			}
+
+			NiPoint3 targetPos;
+			player->GetTargetBonePosition(&targetPos);
+
+			NiPoint3 deltaPos = targetPos - tps->camPos;
+
+			float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+			float rotZ = atan2(deltaPos.x, deltaPos.y);
+			float rotX = atan2(deltaPos.z, xy);
+
+			while (rotZ < 0.0f)
+				rotZ += 2.0f * PI;
+			while (rotZ > 2.0f * PI)
+				rotZ -= 2.0f * PI;
+			while (rotX < -PI)
+				rotX += 2.0f * PI;
+			while (rotX > PI)
+				rotX -= 2.0f * PI;
+
+			float camRotX = tps->diffRotX - g_refTarget->rot.x;
+			float diffAngleX = rotX - camRotX;
+			float diffAngleZ = rotZ - camera->camRotZ;
+
+			if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+			{
+				float distance = camera->GetDistanceWithTargetBone(player, false);
+				if (abs(curDistance - distance) >= 5.0f)
 				{
-					return tps->ProcessCameraCollision();
+					float newFOV = round((atan(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
+					if (newFOV < 30.0f)
+						newFOV = 30.0f;
+
+					SetZoom(newFOV);
+					curDistance = distance;
 				}
 			}
+
+			tps->diffRotZ += (rotZ - camera->camRotZ);
+			tps->diffRotX += (rotX - camRotX);
+
+			return;
 		}
 		else
 		{
-			return tps->ProcessCameraCollision();
-		}	
-	}
-	else
-	{
-		return tps->ProcessCameraCollision();
-	}
+			if (g_switchProcess && camera->cameraRefHandle == PlayerRefHandle)
+			{
+				NiPoint3 targetHeadPos;
+				bool targetHeadPosRet = false;
+				if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
+					g_refTarget->GetTargetBonePosition(&targetHeadPos);
+
+				NiPoint3 headPos;
+				bool headPosRet = false;
+				player->GetTargetHeadNodePosition(&headPos, &headPosRet);
+
+				NiPoint3 resultPos;
+				resultPos = tps->camPos;
+
+				Havok::hkpRootCdPoint resultInfo;
+				Tralala::Actor* resultActor = nullptr;
+
+				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+					&resultActor, 1.0f))
+				{
+#if 0
+					NiAVObject* niObject = resultInfo.hkpCollidableB->GetNiObject();
+					if (niObject)
+					{
+						_MESSAGE("__NPC__ name %s",
+							niObject->m_name);
+					}
 #endif
-}
+					isNPCCollided = true;
+					
+				}
 
-Tralala::Actor * SetObjectFade(Tralala::Actor * actor)
-{
-	Tralala::PlayerCamera * camera = Tralala::PlayerCamera::GetSingleton();
-	Tralala::ThirdPersonState * tps = camera->GetThirdPersonCamera();
+				if (isNPCCollided)
+				{
+					NiPoint3 offset(Settings::fHumanCamOffsetX,
+						Settings::fHumanCamOffsetY,
+						Settings::fHumanCamOffsetZ);
 
-	if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
-		&& camera->cameraRefHandle != PlayerRefHandle && camera->cameraState == tps && actor != g_refTarget)
-	{
+					NiPoint3 ret;
+					ret = player->loadedState->node->m_worldTransform.rot * offset;
+					tps->camPos = headPos + ret;
+				}
 
-		float dist = tps->GetDistanceWithinTargetHead(g_refTarget);
+				NiPoint3 targetPos;
+				g_refTarget->GetTargetBonePosition(&targetPos);
 
-		if (dist <= 125.0f)
-			return g_refTarget;
+				NiPoint3 deltaPos = targetPos - tps->camPos;
+
+				float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+				float rotZ = atan2(deltaPos.x, deltaPos.y);
+				float rotX = atan2(deltaPos.z, xy);
+
+				while (rotZ < 0.0f)
+					rotZ += 2.0f * PI;
+				while (rotZ > 2.0f * PI)
+					rotZ -= 2.0f * PI;
+				while (rotX < -PI)
+					rotX += 2.0f * PI;
+				while (rotX > PI)
+					rotX -= 2.0f * PI;
+
+				float camRotX = tps->diffRotX - player->rot.x;
+				float diffAngleX = rotX - camRotX;
+				float diffAngleZ = rotZ - camera->camRotZ;
+
+				if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+				{
+					float prefDist = Settings::f3rdZoom;
+
+					if (g_refTarget->IsFlyingActor())
+						prefDist = Settings::fDragonZoom;
+
+					float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+					if (abs(curDistance - distance) >= 5.0f)
+					{
+						float newFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
+						if (newFOV < 30.0f)
+							newFOV = 30.0f;
+
+						SetZoom(newFOV);
+						curDistance = distance;
+					}
+				}
+
+				tps->diffRotZ += (rotZ - camera->camRotZ);
+				tps->diffRotX += (rotX - camRotX);
+
+				return;
+			}
+		}
 	}
 
-	return actor;
+	isPCCollided = false;
+	isNPCCollided = false;
+	curDistance = 0.0f;
+
+	return tps->ProcessCameraCollision();
 }
 
 bool SetFreeLook(Tralala::ThirdPersonState * tps, bool freeLook)
@@ -927,12 +1050,33 @@ bool SetFreeLook(Tralala::ThirdPersonState * tps, bool freeLook)
 	Tralala::PlayerCamera * camera = (Tralala::PlayerCamera*)tps->camera;
 
 	if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
-		&& g_refTarget && !camera->isWeapSheathed)
+		&& g_refTarget && (!camera->isWeapSheathed || camera->cameraRefHandle != PlayerRefHandle))
 	{
 		freeLook = true;
 	}
 
 	return freeLook;
+}
+
+bool TPSOnUpdate_Hook(Tralala::ThirdPersonState* tps)
+{
+	Tralala::PlayerCamera* camera = (Tralala::PlayerCamera*)tps->camera;
+
+	if (!tps->toggleAnimCam)
+	{
+		if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
+			&& g_refTarget && (camera->cameraRefHandle != PlayerRefHandle))
+		{
+			Tralala::PlayerControls* control = Tralala::PlayerControls::GetSingleton();
+			tps->ProcessIdleCameraRot(&control->data24.unk02C);
+
+			return true;
+		}
+			
+		return false;
+	}
+
+	return true;
 }
 
 void SetTargetLocationHook(Tralala::ActorProcessManager* apm, Tralala::TESObjectREFR* source, NiPoint3* location)
@@ -1052,6 +1196,7 @@ extern "C"
 		Tralala::ScaleformUtilGetAddresses();
 		Menus::GetAddresses();
 		Graphics::GetAddresses();
+		Havok::GetAddresses();
 
 		Settings::Load();
 		{
@@ -1197,9 +1342,6 @@ extern "C"
 				InstallHookDisablePlayerLook_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label normal;
-					Xbyak::Label disabled;
-					Xbyak::Label normPopStack;
-					Xbyak::Label disPopStack;
 					Xbyak::Label funcLabel;
 					Xbyak::Label retn;
 
@@ -1225,34 +1367,6 @@ extern "C"
 					test(al, al);
 					je(normal);
 
-					push(rcx);
-					push(rdx);
-					mov(rcx, Settings::bSwitchTarget);
-					mov(rdx, Settings::bForceThirdPerson);
-
-					test(cl, dl);
-					jne(normPopStack);
-
-					test(cl, cl);
-					je(disPopStack);
-
-					mov(rax, Tralala::g_playerCameraAddr);
-					mov(rax, ptr[rax]);
-					mov(rax, ptr[rax + 0x28]);
-					mov(eax, dword[rax + 0x18]);
-					test(eax, eax);
-					je(disPopStack);
-
-					L(normPopStack);
-					pop(rdx);
-					pop(rcx);
-					jmp(normal);
-
-					L(disPopStack);
-					pop(rdx);
-					pop(rcx);
-
-					L(disabled);
 					mov(rax, Tralala::g_playerControlsAddr);
 					mov(rax, ptr[rax]);
 					mov(byte[rax + 0x1D8], 0x0);
@@ -1386,6 +1500,7 @@ extern "C"
 				return false;
 		}
 
+#if 0
 		{
 			struct InstallHookSetObjectFade_Code : Xbyak::CodeGenerator {
 				InstallHookSetObjectFade_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
@@ -1429,6 +1544,7 @@ extern "C"
 			if (!g_branchTrampoline.Write5Branch(g_setObjectFadeAddr, uintptr_t(code.getCode())))
 				return false;
 		}
+#endif
 
 		{
 			struct InstallHookSetFreeLook_Code : Xbyak::CodeGenerator {
@@ -1718,6 +1834,52 @@ extern "C"
 
 			if (!g_branchTrampoline.Write5Branch(g_thirdCamColAddr, uintptr_t(code.getCode())))
 				return false;
+		}
+
+		{
+			struct InstallHookCameraUpdateCode : Xbyak::CodeGenerator {
+				InstallHookCameraUpdateCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				{
+					Xbyak::Label retnLabel1;
+					Xbyak::Label retnLabel2;
+					Xbyak::Label funcLabel;
+					Xbyak::Label skip;
+
+					sub(rsp, 0x20);
+
+					mov(rcx, rbx);
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x20);
+					
+					test(al, al);
+					jne(skip);
+
+					jmp(ptr[rip + retnLabel1]);
+
+					L(skip);
+					jmp(ptr[rip + retnLabel2]);
+
+					L(funcLabel);
+					dq(funcAddr);
+
+					L(retnLabel1);
+					dq(g_thirdCamUpdateAddr + 0x9);
+
+					L(retnLabel2);
+					dq(g_thirdCamUpdateAddr + 0x26);
+				}
+			};
+
+			void* codeBuf = g_localTrampoline.StartAlloc();
+			InstallHookCameraUpdateCode code(codeBuf, GetFnAddr(TPSOnUpdate_Hook));
+			g_localTrampoline.EndAlloc(code.getCurr());
+
+
+			if (!g_branchTrampoline.Write5Branch(g_thirdCamUpdateAddr, uintptr_t(code.getCode())))
+				return false;
+
+			SafeWrite16(g_thirdCamUpdateAddr + 0x5, NOP16);
 		}
 
 		Menus::InstallHook();

@@ -11,6 +11,12 @@ struct Settings
 	static float	fDragonZoom;
 	static float	fMessagePosX;
 	static float	fMessagePosY;
+	static float	fHumanCamOffsetX;
+	static float	fHumanCamOffsetY;
+	static float	fHumanCamOffsetZ;
+	static float	fCreatureCamOffsetX;
+	static float	fCreatureCamOffsetY;
+	static float	fCreatureCamOffsetZ;
 	static int		uLetterBoxThickness;
 	static int		uLetterBoxSpeed;
 	static bool		bLockOn;

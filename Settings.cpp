@@ -24,6 +24,12 @@ float	Settings::f3rdZoom = 75.0f;
 float	Settings::fDragonZoom = 125.0f;
 float	Settings::fMessagePosX = -601.f;
 float	Settings::fMessagePosY = -400.f;
+float	Settings::fHumanCamOffsetX = 0.0f;
+float	Settings::fHumanCamOffsetY = 0.0f;
+float	Settings::fHumanCamOffsetZ = 5.0f;
+float	Settings::fCreatureCamOffsetX = 0.0f;
+float	Settings::fCreatureCamOffsetY = 0.0f;
+float	Settings::fCreatureCamOffsetZ = 15.0f;
 
 std::wstring thisPath = L"";
 
@@ -48,6 +54,12 @@ void Settings::Load()
 	TCHAR posY[8];
 	TCHAR mesPosX[8];
 	TCHAR mesPosY[8];
+	TCHAR humanCamX[8];
+	TCHAR humanCamY[8];
+	TCHAR humanCamZ[8];
+	TCHAR creatureCamX[8];
+	TCHAR creatureCamY[8];
+	TCHAR creatureCamZ[8];
 
 	Settings::bLockOn = GetPrivateProfileInt(L"Settings", L"bLockOn", 1, thisPath.c_str());
 	Settings::bForceFirstPerson = GetPrivateProfileInt(L"Settings", L"bForceFirstPerson", 1, thisPath.c_str());
@@ -71,9 +83,22 @@ void Settings::Load()
 	GetPrivateProfileString(L"Settings", L"iMessagePosX", L"-601", mesPosX, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iMessagePosY", L"-400", mesPosY, 8, thisPath.c_str());
 
+	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetX", L"0", humanCamX, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetY", L"0", humanCamY, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetZ", L"5", humanCamZ, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iCreatureCamOffsetX", L"0", creatureCamX, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iCreatureCamOffsetY", L"0", creatureCamY, 8, thisPath.c_str());
+	GetPrivateProfileString(L"Settings", L"iCreatureCamOffsetZ", L"15", creatureCamZ, 8, thisPath.c_str());
+
 	Settings::fAddOverShoulderPosX = (float)_wtoi(posX);
 	Settings::fAddOverShoulderPozZ = (float)_wtoi(posZ);
 	Settings::fAddOverShoulderPosY = (float)_wtoi(posY);
 	Settings::fMessagePosX = (float)_wtoi(mesPosX);
 	Settings::fMessagePosY = (float)_wtoi(mesPosY);
+	Settings::fHumanCamOffsetX = (float)_wtoi(humanCamX);
+	Settings::fHumanCamOffsetY = (float)_wtoi(humanCamY);
+	Settings::fHumanCamOffsetZ = (float)_wtoi(humanCamZ);
+	Settings::fCreatureCamOffsetX = (float)_wtoi(creatureCamX);
+	Settings::fCreatureCamOffsetY = (float)_wtoi(creatureCamY);
+	Settings::fCreatureCamOffsetZ = (float)_wtoi(creatureCamZ);
 }

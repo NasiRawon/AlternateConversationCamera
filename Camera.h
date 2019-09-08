@@ -3,6 +3,7 @@
 #include "skse64/GameCamera.h"
 #include "PatternScanner.h"
 #include "Utils.h"
+#include "Havok.h"
 
 namespace Tralala
 {
@@ -94,12 +95,11 @@ namespace Tralala
 		float					savedZoom;					// 84
 		float					unk88;						// 88 - related to y-axis
 		float					unk8C;						// 8C - init'd 7F7FFFFF
-		UInt32					unk90[3];					// 90
+		NiPoint3				collisionPos;				// 90
 		float					unk9C;						// 9C - init'd 7F7FFFFF
 		UInt64					unkA0;						// A0 - NiNode
 		UInt64					unkA8;						// A8
-		float					unkB0;						// B0
-		UInt32					unkB4[3];					// B4
+		NiQuaternion			unkB0;						// B0 - use by slerp
 		float					unkC0[5];					// C0
 		float					diffRotZ;					// D4 - difference between camera and actor
 		float					diffRotX;					// D8
@@ -295,10 +295,11 @@ namespace Tralala
 		};
 		STATIC_ASSERT(sizeof(Data40) == 0x78);
 
+		// for camera's collision
 		struct SimpleShapePhantom
 		{
 			void * simpleShapePhantom1;
-			void* simpleShapePhantom2;
+			void * simpleShapePhantom2;
 		};
 
 		UInt32	unk38;											// 038
@@ -306,7 +307,7 @@ namespace Tralala
 		Data40	unk40;											// 040 - bstsmallarray
 		TESCameraState * cameraStates[kNumCameraStates];		// 0B8
 		SimpleShapePhantom*	simpleShapePhantoms;				// 120
-		void*	rigidBody;								// 128 - bhkRigidBody
+		void*	rigidBody;										// 128 - bhkRigidBody
 		UInt32	objectFadeHandle;								// 130 
 		SimpleLock	cameraLock;									// 134
 		float	worldFOV;										// 13C
@@ -344,7 +345,18 @@ namespace Tralala
 		void UpdateThirdPersonMode(bool weaponDrawn);
 		bool GetDistanceWithTargetBone(Actor * target, NiPoint3 * dist);
 		float GetDistanceWithTargetBone(Actor * target, bool firstPerson);
-		bool IsCollide(Actor * target, NiPoint3* sourcePos, float radius, float unk);
+		
+		// this function will handle the actor's fading if camera penetrates the target
+		bool GetPenetration(Actor * target, NiPoint3* sourcePos, float radiusToCheck, float offsetActorFromGround);
+		
+		// bhkWorldM is for accessing the hkpWorld's linear cast
+		// resultActor is for fading purposes, except player
+		// resultInfo contains information of closest point collision
+		// resultPos contains position of collision in Bethesda scale
+		// resultPos is both input and output
+		// this function will call linear cast, most likely sphere cast itself 
+		bool GetClosestPoint(void* bhkWorldM, NiPoint3* sourcePos, NiPoint3* resultPos,
+			Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck);
 
 		static PlayerCamera *	GetSingleton();
 

@@ -204,6 +204,8 @@ namespace Tralala
 		{
 			return this->formType == kFormType_Character;
 		}
+
+		void* GetbhkWorldM();
 	};
 
 	STATIC_ASSERT(sizeof(TESObjectREFR) == 0x98);
@@ -581,7 +583,7 @@ namespace Tralala
 		bool IsFlyingActor();
 		bool IsNotInFurniture();
 		bool IsCasting(MagicItem* spell = nullptr);
-		bool GetTargetHeadNodePosition(float * pos);
+		bool GetTargetHeadNodePosition(NiPoint3 * pos, bool *compare);
 		bool IsSneaking();
 		float GetSneakingHeight(bool isCamera);
 		float GetCameraHeight();
