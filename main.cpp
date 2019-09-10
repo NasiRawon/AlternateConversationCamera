@@ -149,7 +149,7 @@ static void ResetZoom()
 	g_fovStep = step;
 }
 
-static bool IsValidFaceToFace(Tralala::PlayerCamera * camera)
+static bool IsValidFaceToFace(Tralala::PlayerCamera * camera, Tralala::Actor** ret)
 {
 	if (!camera->IsCameraFirstPerson() && !camera->IsCameraThirdPerson())
 		return false;
@@ -162,6 +162,13 @@ static bool IsValidFaceToFace(Tralala::PlayerCamera * camera)
 
 	if (Tralala::PlayerCharacter::GetSingleton()->IsOnCarriage())
 		return false;
+
+	Tralala::TESObjectREFR* target = nullptr;
+	target = Tralala::MenuTopicManager::GetSingleton()->GetDialogueTarget();
+	if (!target || !target->IsCharacter())
+		return false;
+
+	*ret = (Tralala::Actor*)target;
 
 	return true;
 }
@@ -182,110 +189,101 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 
 	if (evn->opening)
 	{
-		if (!IsValidFaceToFace(camera))
+		Tralala::Actor* actor = nullptr;
+		
+		if (!IsValidFaceToFace(camera, &actor))
 		{
 			g_refTarget = nullptr;
 			return;
 		}
 
-		Tralala::TESObjectREFR* target = nullptr;
+		if (Settings::bHeadTracking)
+			player->processManager->SetDialogueHeadTrackingTarget(actor);
 
-		Tralala::MenuTopicManager * mm = Tralala::MenuTopicManager::GetSingleton();
-		if (mm)
-			target = mm->GetDialogueTarget();
+		float thisFOV = 0.0f;
+		float distance = 0.0f;
+		float prefDist = Settings::f1stZoom;
+		g_delay = 60.0f; // init delay, so it won't instantly switch to the npc
 
-		if (target && target->IsCharacter())
+		if (camera->IsCameraThirdPerson())
 		{
-			Tralala::Actor * actor = (Tralala::Actor*)target;
+			zoom = true;
+			cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_ThirdPerson2;
 
-			if(Settings::bHeadTracking)
-				player->processManager->SetDialogueHeadTrackingTarget(actor);
-
-			float thisFOV = 0.0f;
-			float distance = 0.0f;
-			float prefDist = Settings::f1stZoom;
-			g_delay = 75.0f; // init delay, so it won't instantly switch to the npc
-
-			if (camera->IsCameraThirdPerson())
+			if (Settings::bForceFirstPerson)
 			{
-				zoom = true;
-				cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_ThirdPerson2;
-
-				if (Settings::bForceFirstPerson)
-				{
-					if (Settings::bSmoothTransition)
-						tps->SetFirstPersonSmooth(minZoom);
-					else
-						camera->ForceFirstPerson();
-				}
+				if (Settings::bSmoothTransition)
+					tps->SetFirstPersonSmooth(minZoom);
 				else
-				{
-					NiPoint3 shoulderPos;
-					shoulderPos.x = Settings::fAddOverShoulderPosX;
-					shoulderPos.y = Settings::fAddOverShoulderPosY;
-					shoulderPos.z = Settings::fAddOverShoulderPozZ;
-
-					tps->SetShoulderPos(shoulderPos);
-				}
+					camera->ForceFirstPerson();
 			}
-			else if (camera->IsCameraFirstPerson())
+			else
 			{
-				zoom = true;
-				cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_FirstPerson;
-				if (Settings::bSwitchTarget && Settings::bForceThirdPerson)
-				{
-					camera->ForceThirdPerson(true);
+				NiPoint3 shoulderPos;
+				shoulderPos.x = Settings::fAddOverShoulderPosX;
+				shoulderPos.y = Settings::fAddOverShoulderPosY;
+				shoulderPos.z = Settings::fAddOverShoulderPozZ;
 
-					NiPoint3 shoulderPos;
-					shoulderPos.x = Settings::fAddOverShoulderPosX;
-					shoulderPos.y = Settings::fAddOverShoulderPosY;
-					shoulderPos.z = Settings::fAddOverShoulderPozZ;
-
-					tps->SetShoulderPos(shoulderPos);
-					
-				}		
+				tps->SetShoulderPos(shoulderPos);
 			}
-
-			if (camera->IsCameraFirstPerson() || Settings::bForceFirstPerson)
+		}
+		else
+		{
+			zoom = true;
+			cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_FirstPerson;
+			if (Settings::bSwitchTarget && Settings::bForceThirdPerson)
 			{
-				if (actor->IsFlyingActor()) // dragon has big head and absurd position xD
+				camera->ForceThirdPerson(true);
+
+				NiPoint3 shoulderPos;
+				shoulderPos.x = Settings::fAddOverShoulderPosX;
+				shoulderPos.y = Settings::fAddOverShoulderPosY;
+				shoulderPos.z = Settings::fAddOverShoulderPozZ;
+
+				tps->SetShoulderPos(shoulderPos);
+
+			}
+		}
+
+		if (camera->IsCameraFirstPerson() || Settings::bForceFirstPerson)
+		{
+			if (actor->IsFlyingActor()) // dragon has big head and absurd position xD
+				prefDist = Settings::fDragonZoom;
+
+			distance = camera->GetDistanceWithTargetBone(actor, true);
+			thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+			if (thisFOV < 20.0f)
+				thisFOV = 20.0f;
+
+			SetZoom(thisFOV);
+
+			g_firstDistance = distance;
+			g_refTarget = actor;
+		}
+		else
+		{
+			if (cameraStateIDStarter == Tralala::PlayerCamera::kCameraState_ThirdPerson2)
+			{
+				prefDist = Settings::f3rdZoom;
+
+				if (actor->IsFlyingActor())
 					prefDist = Settings::fDragonZoom;
 
-				distance = camera->GetDistanceWithTargetBone(actor, true);
-				thisFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
-				if (thisFOV < 20.0f)
-					thisFOV = 20.0f;
+				distance = camera->GetDistanceWithTargetBone(actor, false);
+				thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+				if (thisFOV < 30.0f)
+					thisFOV = 30.0f;
 
 				SetZoom(thisFOV);
 
-				g_firstDistance = distance;
-				g_refTarget = actor;
+				g_thirdDistance = distance;
 			}
-			else if (camera->IsCameraThirdPerson())
+			else
 			{
-				if (cameraStateIDStarter == Tralala::PlayerCamera::kCameraState_ThirdPerson2)
-				{
-					prefDist = Settings::f3rdZoom;
-
-					if (actor->IsFlyingActor())
-						prefDist = Settings::fDragonZoom;
-
-					distance = camera->GetDistanceWithTargetBone(actor, false);
-					thisFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
-					if (thisFOV < 30.0f)
-						thisFOV = 30.0f;
-
-					SetZoom(thisFOV);
-
-					g_thirdDistance = distance;
-				}
-				else
-				{
-					g_thirdDistance = 0.0f;
-				}
-	
-				g_refTarget = actor;
+				g_thirdDistance = 0.0f;
 			}
+
+			g_refTarget = actor;
 		}
 	}
 	else
@@ -295,47 +293,48 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 		if(Settings::bHeadTracking)
 			player->processManager->ClearHeadTracking();
 
-		if (zoom)
+		if (Settings::bSwitchTarget)
 		{
-			if (Settings::bSwitchTarget)
-			{
-				g_delay = 0.0f;
-				camera->SetCameraTarget(player);
-			}
-				
-			zoom = false;
-			if (camera->IsCameraFirstPerson() || camera->IsCameraThirdPerson())
-			{
-				if (cameraStateIDStarter == Tralala::PlayerCamera::kCameraState_ThirdPerson2)
-				{
-					if (player->IsNotInFurniture() && camera->IsCameraThirdPerson())
-					{
-						if (!Settings::bSwitchTarget)
-							player->rot.z = camera->camRotZ;
-
-						player->rot.x -= tps->diffRotX;
-
-						tps->diffRotX = tps->diffRotZ = 0.0f;
-					}
-
-					tps->UpdateMode(!camera->isWeapSheathed);
-
-					if (camera->IsCameraFirstPerson())
-						camera->ForceThirdPerson(true);
-
-				}
-				else
-				{
-					if (Settings::bSwitchTarget && Settings::bForceThirdPerson && camera->IsCameraThirdPerson())
-					{
-						tps->UpdateMode(!camera->isWeapSheathed);
-						tps->SetFirstPersonSmooth(minZoom, true);					
-					}
-				}
-			}
-
-			ResetZoom();
+			g_delay = 0.0f;
+			camera->SetCameraTarget(player);
 		}
+
+		if (!zoom)
+			return;
+
+		if (camera->IsCameraFirstPerson() || camera->IsCameraThirdPerson())
+		{
+			if (cameraStateIDStarter == Tralala::PlayerCamera::kCameraState_ThirdPerson2)
+			{
+				if (player->IsNotInFurniture() && camera->IsCameraThirdPerson())
+				{
+					if (!Settings::bSwitchTarget)
+						player->rot.z = camera->camRotZ;
+
+					player->rot.x -= tps->diffRotX;
+
+					tps->diffRotX = tps->diffRotZ = 0.0f;
+				}
+
+				tps->UpdateMode(!camera->isWeapSheathed);
+
+				if (camera->IsCameraFirstPerson())
+					camera->ForceThirdPerson(true);
+
+			}
+			else
+			{
+				if (Settings::bSwitchTarget && Settings::bForceThirdPerson && camera->IsCameraThirdPerson())
+				{
+					tps->UpdateMode(!camera->isWeapSheathed);
+					tps->SetFirstPersonSmooth(minZoom, true);
+				}
+			}
+		}
+
+		ResetZoom();
+
+		zoom = false;
 	}
 }
 
@@ -370,8 +369,8 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 	float xy, rotZ, rotX = 0.0f;
 
 	xy = sqrt(pos.x*pos.x + pos.y*pos.y);
-	rotZ = atan2(pos.x, pos.y);
-	rotX = atan2(-pos.z, xy);
+	rotZ = atan2f(pos.x, pos.y);
+	rotX = atan2f(-pos.z, xy);
 
 	float diffAngleZ, diffAngleX = 0.0f;
 
@@ -553,7 +552,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 			float angleDiffZ, angleDiffX;
 			{
 				angleDiffZ = rotZ - camera->camRotZ;
-				angleDiffX = atan2(pos.z, xy) - (tps->diffRotX - source->rot.x);
+				angleDiffX = atan2f(pos.z, xy) - (tps->diffRotX - source->rot.x);
 
 				while (angleDiffZ < -PI)
 					angleDiffZ += 2.0f * PI;
@@ -597,11 +596,11 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 	if (camera->IsCameraFirstPerson() || camera->IsCameraThirdPerson())
 	{
-		if (Settings::bHeadTracking && mtm) 
+		if (Settings::bHeadTracking) 
 		{
 			Tralala::BSFixedString isNPCVar("IsNPC");
 
-			if (mtm->isInDialogueState)
+			if (mtm && mtm->isInDialogueState)
 				player->animGraphHolder.SetAnimationVariableBool(isNPCVar, true);
 			else
 			{
@@ -649,99 +648,40 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 		}
 		else
 		{
-			if (g_refTarget)
+			if(!g_refTarget)
+				return player->GetEquippedWeapon(isLeftHand);
+
+			if (Settings::bLockOn || mtm->talkingHandle == 0)
 			{
-				if (Settings::bLockOn || mtm->talkingHandle == 0)
+				static bool switchReady = false;
+
+				float prefDist = Settings::f1stZoom;
+
+				if (Settings::bForceFirstPerson || camera->IsCameraFirstPerson())
 				{
-					static bool switchReady = false;
+					if (g_refTarget->IsFlyingActor())
+						prefDist = Settings::fDragonZoom;
 
-					float prefDist = Settings::f1stZoom;
+					float distance = camera->GetDistanceWithTargetBone(g_refTarget, true);
 
-					if (Settings::bForceFirstPerson || camera->IsCameraFirstPerson())
+					if (abs(g_firstDistance - distance) >= 5.0f)
 					{
-						if (g_refTarget->IsFlyingActor())
-							prefDist = Settings::fDragonZoom;
+						float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+						if (newFOV < 20.0f)
+							newFOV = 20.0f;
 
-						float distance = camera->GetDistanceWithTargetBone(g_refTarget, true);
-
-						if (abs(g_firstDistance - distance) >= 5.0f)
-						{
-							float newFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
-							if (newFOV < 20.0f)
-								newFOV = 20.0f;
-
-							SetZoom(newFOV);
-							g_firstDistance = distance;
-						}
-
+						SetZoom(newFOV);
+						g_firstDistance = distance;
 					}
-					else
+
+				}
+				else
+				{
+					if (Settings::bSwitchTarget)
 					{
-						if (Settings::bSwitchTarget)
-						{
-							Tralala::ThirdPersonState * tps = camera->GetThirdPersonCamera();
+						Tralala::ThirdPersonState* tps = camera->GetThirdPersonCamera();
 
-							if (g_thirdDistance == 0 && tps->curPosY == tps->dstPosY)
-							{
-								prefDist = Settings::f3rdZoom;
-
-								if (g_refTarget->IsFlyingActor())
-									prefDist = Settings::fDragonZoom;
-
-								float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
-
-								float thisFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
-								if (thisFOV < 30.0f)
-									thisFOV = 30.0f;
-
-								SetZoom(thisFOV);
-								g_thirdDistance = distance;
-							}
-							else
-							{
-								if (tps->curPosY == tps->dstPosY)
-								{
-									if (g_refTarget->IsTalking() || mtm->unk70)
-									{
-										camera->SetCameraTarget(player);
-
-										if (g_delay == 75.0f) // init
-										{
-											g_delay = 50.0f;
-											switchReady = false;
-										}							
-										else if (g_delay == 50.0f)
-										{
-											g_delay = 50.0f;
-											switchReady = false;
-										}	
-										else // normal				
-										{
-											g_delay = 20.0f;
-											switchReady = true;
-										}	
-									}
-									else
-									{
-										float delay = (1.0f / 0.016667f) * (*(float*)Tralala::g_deltaTimeAddr);
-
-										if (g_delay > 0.0f)
-											g_delay -= delay;
-										if (g_delay < 0.0f)
-											g_delay = 0.0f;
-
-										if (switchReady && camera->cameraRefHandle == PlayerRefHandle 
-											&& g_delay == 0.0f)
-										{
-											camera->SetCameraTarget(g_refTarget);
-											switchReady = false;
-											g_switchProcess = true;
-										}
-									}
-								}
-							}
-						}
-						else
+						if (g_thirdDistance == 0 && tps->curPosY == tps->dstPosY)
 						{
 							prefDist = Settings::f3rdZoom;
 
@@ -750,59 +690,99 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 							float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
 
-							if (abs(g_thirdDistance - distance) >= 5.0f)
-							{
-								float newFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
-								if (newFOV < 30.0f)
-									newFOV = 30.0f;
+							float thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+							if (thisFOV < 30.0f)
+								thisFOV = 30.0f;
 
-								SetZoom(newFOV);
-								g_thirdDistance = distance;
-							}
-						}
-					}
-
-					if (camera->cameraRefHandle == PlayerRefHandle)
-					{
-						if (Settings::bSwitchTarget)
-						{
-							if (!g_switchProcess)
-							{
-								static float targetDist = 0.0f;
-
-								if (Settings::bForceThirdPerson)
-								{
-									targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
-								}
-								else
-								{
-									if (camera->IsCameraFirstPerson())
-										RotateCamera(camera, player, g_refTarget, controller, false);
-									else
-										targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
-								}
-
-								if (targetDist <= 0.001f)
-									switchReady = true;
-							}
-							else
-							{
-								switchReady = true;
-							}
-							
+							SetZoom(thisFOV);
+							g_thirdDistance = distance;
 						}
 						else
 						{
-							RotateCamera(camera, player, g_refTarget, controller, false);
+							if (tps->curPosY == tps->dstPosY)
+							{
+								if (g_refTarget->IsTalking() || mtm->unk70)
+								{
+									camera->SetCameraTarget(player);
+
+									if (g_delay >= 60.0f) // init
+									{
+										switchReady = false;
+									}
+									else // normal				
+									{
+										g_delay = 10.0f;
+										switchReady = true;
+									}
+								}
+								else
+								{
+									float delay = (1.0f / 0.016667f) * (*(float*)Tralala::g_deltaTimeAddr);
+
+									if (g_delay > 0.0f)
+										g_delay -= delay;
+									if (g_delay < 0.0f)
+										g_delay = 0.0f;
+
+									if (switchReady && camera->cameraRefHandle == PlayerRefHandle
+										&& g_delay <= 0.0f)
+									{
+										camera->SetCameraTarget(g_refTarget);
+										switchReady = false;
+										g_switchProcess = true;
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						prefDist = Settings::f3rdZoom;
+
+						if (g_refTarget->IsFlyingActor())
+							prefDist = Settings::fDragonZoom;
+
+						float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+
+						if (abs(g_thirdDistance - distance) >= 5.0f)
+						{
+							float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+							if (newFOV < 30.0f)
+								newFOV = 30.0f;
+
+							SetZoom(newFOV);
+							g_thirdDistance = distance;
 						}
 					}
 				}
-				else
+
+				if (camera->cameraRefHandle == PlayerRefHandle)
 				{
-					float crosshairDist = RotateCamera(camera, player, g_refTarget, controller, true);
-					if (crosshairDist <= 0.001f)
-						g_refTarget = nullptr;
+					if (Settings::bSwitchTarget && camera->IsCameraThirdPerson())
+					{
+						if (!g_switchProcess) // init switch process
+						{
+							float targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
+							if (targetDist <= 0.001f)
+								switchReady = true;
+						}
+						else
+						{
+							switchReady = true;
+						}
+
+					}
+					else
+					{
+						RotateCamera(camera, player, g_refTarget, controller, false);
+					}
 				}
+			}
+			else
+			{
+				float crosshairDist = RotateCamera(camera, player, g_refTarget, controller, true);
+				if (crosshairDist <= 0.001f)
+					g_refTarget = nullptr;
 			}
 		}
 	}
@@ -871,7 +851,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			Havok::hkpRootCdPoint resultInfo;
 			Tralala::Actor* resultActor = nullptr;
 
-			if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+			if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 				&resultActor, 1.0f))
 			{
 #if 0
@@ -909,8 +889,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			NiPoint3 deltaPos = targetPos - tps->camPos;
 
 			float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
-			float rotZ = atan2(deltaPos.x, deltaPos.y);
-			float rotX = atan2(deltaPos.z, xy);
+			float rotZ = atan2f(deltaPos.x, deltaPos.y);
+			float rotX = atan2f(deltaPos.z, xy);
 
 			while (rotZ < 0.0f)
 				rotZ += 2.0f * PI;
@@ -930,7 +910,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				float distance = camera->GetDistanceWithTargetBone(player, false);
 				if (abs(curDistance - distance) >= 5.0f)
 				{
-					float newFOV = round((atan(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
+					float newFOV = round((atanf(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
 					if (newFOV < 30.0f)
 						newFOV = 30.0f;
 
@@ -963,7 +943,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				Havok::hkpRootCdPoint resultInfo;
 				Tralala::Actor* resultActor = nullptr;
 
-				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+				if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 					&resultActor, 1.0f))
 				{
 #if 0
@@ -995,8 +975,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				NiPoint3 deltaPos = targetPos - tps->camPos;
 
 				float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
-				float rotZ = atan2(deltaPos.x, deltaPos.y);
-				float rotX = atan2(deltaPos.z, xy);
+				float rotZ = atan2f(deltaPos.x, deltaPos.y);
+				float rotX = atan2f(deltaPos.z, xy);
 
 				while (rotZ < 0.0f)
 					rotZ += 2.0f * PI;
@@ -1021,7 +1001,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
 					if (abs(curDistance - distance) >= 5.0f)
 					{
-						float newFOV = round((atan(prefDist / distance) * 2.0f) * 180.0f / PI);
+						float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 						if (newFOV < 30.0f)
 							newFOV = 30.0f;
 
@@ -1355,13 +1335,18 @@ extern "C"
 					je(normal);
 
 					push(rcx);
-					sub(rsp, 0x28);
+					push(rdx);
+					sub(rsp, 0x20);
 
 					mov(rax, Tralala::g_playerCameraAddr);
+					xor(rdx, rdx);
+					mov(ptr[rsp], rdx);
+					lea(rdx, ptr[rsp]);
 					mov(rcx, ptr[rax]);
 					call(ptr[rip + funcLabel]);
 
-					add(rsp, 0x28);
+					add(rsp, 0x20);
+					pop(rdx);
 					pop(rcx);
 
 					test(al, al);
