@@ -813,8 +813,7 @@ float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 	NiPoint3 headPos;
 	bool ret = false;
 
-	actor->GetTargetHeadNodePosition(&headPos, &ret);
-	if (headPos.z == 0.0f)
+	if(!actor->GetTargetHeadNodePosition(&headPos, &ret))
 		return actor->GetCameraHeight();
 
 	return (headPos.z - actor->pos.z);
@@ -851,7 +850,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			Havok::hkpRootCdPoint resultInfo;
 			Tralala::Actor* resultActor = nullptr;
 
-			if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+			if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 				&resultActor, 1.0f))
 			{
 #if 0
@@ -878,9 +877,19 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					offset.z = Settings::fCreatureCamOffsetZ;
 				}
 
-				NiPoint3 ret;
-				ret = g_refTarget->loadedState->node->m_worldTransform.rot* offset;
-				tps->camPos = headPos + ret;
+				// make sure the camera's owner has 3d loaded
+				if (g_refTarget->loadedState && g_refTarget->loadedState->node)
+				{
+					NiPoint3 ret;
+					ret = g_refTarget->loadedState->node->m_worldTransform.rot * offset;
+					tps->camPos = headPos + ret;
+				}
+				else
+				{
+					// either this or resultPos
+					// however, i prefer fake first person instead of collision pos
+					tps->camPos = headPos;
+				}
 			}
 
 			NiPoint3 targetPos;
@@ -943,7 +952,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				Havok::hkpRootCdPoint resultInfo;
 				Tralala::Actor* resultActor = nullptr;
 
-				if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 					&resultActor, 1.0f))
 				{
 #if 0
@@ -964,9 +973,19 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 						Settings::fHumanCamOffsetY,
 						Settings::fHumanCamOffsetZ);
 
-					NiPoint3 ret;
-					ret = player->loadedState->node->m_worldTransform.rot * offset;
-					tps->camPos = headPos + ret;
+					// make sure the camera's owner has 3d loaded
+					if (player->loadedState && player->loadedState->node)
+					{
+						NiPoint3 ret;
+						ret = player->loadedState->node->m_worldTransform.rot * offset;
+						tps->camPos = headPos + ret;
+					}
+					else
+					{
+						// either this or resultPos
+						// however, i prefer fake first person instead of collision pos
+						tps->camPos = headPos;
+					}
 				}
 
 				NiPoint3 targetPos;
@@ -1037,6 +1056,7 @@ bool SetFreeLook(Tralala::ThirdPersonState * tps, bool freeLook)
 
 	return freeLook;
 }
+
 
 bool TPSOnUpdate_Hook(Tralala::ThirdPersonState* tps)
 {
