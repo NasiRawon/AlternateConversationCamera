@@ -19,10 +19,17 @@ namespace Tralala
 	class ActorProcessManager
 	{
 	public:
+
+		struct Data10
+		{
+			UInt8  unk00[0x130 - 0x00];
+			UInt32 unk130;
+		};
 		
 		UInt64	unk00;						// 00
 		MiddleProcess* middleProcess;		// 08
-		UInt8	unk10[0x140 - 0x10]; // too lazy
+		Data10*  unk10;						// 10
+		UInt8	unk18[0x140 - 0x18]; // too lazy
 
 		void SetTargetLocation(TESObjectREFR* source, NiPoint3* location);
 		void SetDialogueHeadTrackingTarget(TESObjectREFR* target);
@@ -587,6 +594,7 @@ namespace Tralala
 		bool IsSneaking();
 		float GetSneakingHeight(bool isCamera);
 		float GetCameraHeight();
+		void Unk_0x5ECF90();
 
 		class FactionVisitor
 		{

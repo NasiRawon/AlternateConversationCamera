@@ -14,6 +14,7 @@ namespace Tralala
 	uintptr_t g_getPenetrationAddr = 0;
 	uintptr_t g_processCamColAddr = 0;
 	uintptr_t g_getClosestPointAddr = 0;
+	uintptr_t g_camProcessColAddr = 0;
 
 	void PlayerCameraGetAddress()
 	{
@@ -36,6 +37,10 @@ namespace Tralala
 		g_getPenetrationAddr = (uintptr_t)scan_memory_data(penetpattern, 0x7D, true, 0x1, 0x5);
 
 		g_getClosestPointAddr = (uintptr_t)scan_memory_data(penetpattern, 0xF0, false, 0x1, 0x5);
+
+		const std::array<BYTE, 6> processColPattern = { 0x0F, 0x28, 0xD8, 0x0F, 0x2F, 0xD8 };
+		g_camProcessColAddr = (uintptr_t)scan_memory_data(processColPattern, 0xBF, false, 0x1, 0x5);
+
 		//static const BYTE updateThirdPayload[] = { 0x41, 0x0F, 0xB6, 0xD1, 0x41, 0x0F, 0xB6, 0xD9 };
 		//std::vector<BYTE> updateThirdpattern(updateThirdPayload, updateThirdPayload + sizeof(updateThirdPayload) / sizeof(updateThirdPayload[0]));
 		//g_updateThirdPersonAddr = (uintptr_t)scan_memory_data(updateThirdpattern, 0x1F, true, 0x1, 0x5);
@@ -264,5 +269,13 @@ namespace Tralala
 
 		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos, 
 			resultInfo, resultActor, radiusToCheck);
+	}
+
+	bool PlayerCamera::ProcessCollision(NiPoint3* camPos, bool isFade)
+	{
+		typedef bool(*ProcessCollision_t)(PlayerCamera*, NiPoint3*, bool);
+		ProcessCollision_t ProcessCollision = (ProcessCollision_t)g_camProcessColAddr;
+
+		return ProcessCollision(this, camPos, isFade);
 	}
 }

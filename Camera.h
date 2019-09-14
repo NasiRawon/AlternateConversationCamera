@@ -358,6 +358,8 @@ namespace Tralala
 		bool GetClosestPoint(void* bhkWorldM, NiPoint3* sourcePos, NiPoint3* resultPos,
 			Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck);
 
+		bool ProcessCollision(NiPoint3* camPos, bool isFade);
+
 		static PlayerCamera *	GetSingleton();
 
 	};

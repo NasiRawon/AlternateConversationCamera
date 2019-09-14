@@ -20,6 +20,7 @@ namespace Tralala
 	uintptr_t g_cameraHeightAddr = 0;
 	uintptr_t g_getFurnHandleAddr = 0;
 	uintptr_t g_getbhkWorldMAddr = 0;
+	uintptr_t g_unk_0x5ECF90Addr = 0;
 
 	void ObjectRefGetAddresses()
 	{
@@ -72,6 +73,9 @@ namespace Tralala
 
 		const std::array<BYTE, 8> bhkWorldpattern = { 0x45, 0x0F, 0xB6, 0xC1, 0x41, 0x0F, 0xB6, 0xC9 };
 		g_getbhkWorldMAddr = (uintptr_t)scan_memory_data(bhkWorldpattern, 0x1F, true, 0x1, 0x5);
+
+		const std::array<BYTE, 8> unkpattern = { 0x0F, 0x28, 0xDF, 0x4C, 0x8D, 0x44, 0x24, 0x60 };
+		g_unk_0x5ECF90Addr = (uintptr_t)scan_memory_data(unkpattern, 0x7E, true, 0x1, 0x5);
 	}
 
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
@@ -433,6 +437,14 @@ namespace Tralala
 		GetCameraHeight_t GetCameraHeight = (GetCameraHeight_t)g_cameraHeightAddr;
 
 		return GetCameraHeight(this);
+	}
+
+	void Actor::Unk_0x5ECF90()
+	{
+		typedef void(*Unk_0x5ECF90_t)(Actor*);
+		Unk_0x5ECF90_t Unk_0x5ECF90 = (Unk_0x5ECF90_t)g_unk_0x5ECF90Addr;
+
+		return Unk_0x5ECF90(this);
 	}
 
 	PlayerCharacter * PlayerCharacter::GetSingleton()

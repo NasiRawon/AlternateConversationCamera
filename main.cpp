@@ -60,6 +60,7 @@ uintptr_t g_finishSaveAddr = 0;
 uintptr_t g_thirdCamHeightAddr = 0;
 uintptr_t g_thirdCamColAddr = 0;
 uintptr_t g_thirdCamUpdateAddr = 0;
+uintptr_t g_camCollisionAddr = 0;
 
 void MainGetAddresses()
 {
@@ -122,6 +123,9 @@ void MainGetAddresses()
 
 	const std::array<BYTE, 9> onUpdatePattern = { 0x48, 0x8D, 0x54, 0x24, 0x38, 0x48, 0x8B, 0x4B, 0x10 };
 	g_thirdCamUpdateAddr = (uintptr_t)scan_memory(onUpdatePattern, 0x99, false);
+
+	const std::array<BYTE, 6> camColPattern = { 0x0F, 0x28, 0xD8, 0x0F, 0x2F, 0xD8 };
+	g_camCollisionAddr = (uintptr_t)scan_memory(camColPattern, 0xBF, false);
 }
 
 
@@ -833,6 +837,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 
 	static bool isPCCollided = false;
 	static bool isNPCCollided = false;
+	static bool isFade = false;
 	static float curDistance = 0.0f;
 
 	if (Tralala::MenuTopicManager::GetSingleton()->isInDialogueState && g_refTarget && player->parentCell)
@@ -864,6 +869,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					_MESSAGE("__PLAYER__ name %s",
 						niObject->m_name);
 				}
+
 #endif
 				
 				isPCCollided = true;
@@ -939,115 +945,176 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 		}
 		else
 		{
-			if (g_switchProcess && camera->cameraRefHandle == PlayerRefHandle)
+			
+			NiPoint3 targetHeadPos;
+			bool targetHeadPosRet = false;
+			if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
+				g_refTarget->GetTargetBonePosition(&targetHeadPos);
+
+			NiPoint3 headPos;
+			bool headPosRet = false;
+			player->GetTargetHeadNodePosition(&headPos, &headPosRet);
+
+			NiPoint3 resultPos;
+			resultPos = tps->camPos;
+
+			Havok::hkpRootCdPoint resultInfo;
+			Tralala::Actor* resultActor = nullptr;
+
+			if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+				&resultActor, 1.0f))
 			{
-				NiPoint3 targetHeadPos;
-				bool targetHeadPosRet = false;
-				if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
-					g_refTarget->GetTargetBonePosition(&targetHeadPos);
-
-				NiPoint3 headPos;
-				bool headPosRet = false;
-				player->GetTargetHeadNodePosition(&headPos, &headPosRet);
-
-				NiPoint3 resultPos;
-				resultPos = tps->camPos;
-
-				Havok::hkpRootCdPoint resultInfo;
-				Tralala::Actor* resultActor = nullptr;
-
-				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
-					&resultActor, 1.0f))
-				{
 #if 0
-					NiAVObject* niObject = resultInfo.hkpCollidableB->GetNiObject();
-					if (niObject)
-					{
-						_MESSAGE("__NPC__ name %s",
-							niObject->m_name);
-					}
+				NiAVObject * niObject = resultInfo.hkpCollidableB->GetNiObject();
+				if (niObject)
+				{
+					_MESSAGE("__NPC__ name %s",
+						niObject->m_name);
+				}
 #endif
-					isNPCCollided = true;
-					
-				}
+				isNPCCollided = true;
 
-				if (isNPCCollided)
+			}
+
+			if (!g_switchProcess)
+			{
+				isPCCollided = false;
+				isNPCCollided = false;
+				curDistance = 0.0f;
+				
+				if (camera->objectFadeHandle == PlayerRefHandle)
 				{
-					NiPoint3 offset(Settings::fHumanCamOffsetX,
-						Settings::fHumanCamOffsetY,
-						Settings::fHumanCamOffsetZ);
-
-					// make sure the camera's owner has 3d loaded
-					if (player->loadedState && player->loadedState->node)
-					{
-						NiPoint3 ret;
-						ret = player->loadedState->node->m_worldTransform.rot * offset;
-						tps->camPos = headPos + ret;
-					}
-					else
-					{
-						// either this or resultPos
-						// however, i prefer fake first person instead of collision pos
-						tps->camPos = headPos;
-					}
+					isFade = true;
+					return tps->ProcessCameraCollision();
 				}
 
-				NiPoint3 targetPos;
-				g_refTarget->GetTargetBonePosition(&targetPos);
+				if (!isFade)
+					return tps->ProcessCameraCollision();
 
-				NiPoint3 deltaPos = targetPos - tps->camPos;
+				NiPoint3 offset(Settings::fHumanCamOffsetX,
+					Settings::fHumanCamOffsetY,
+					Settings::fHumanCamOffsetZ);
 
-				float xy = sqrtf(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
-				float rotZ = atan2f(deltaPos.x, deltaPos.y);
-				float rotX = atan2f(deltaPos.z, xy);
-
-				while (rotZ < 0.0f)
-					rotZ += 2.0f * PI;
-				while (rotZ > 2.0f * PI)
-					rotZ -= 2.0f * PI;
-				while (rotX < -PI)
-					rotX += 2.0f * PI;
-				while (rotX > PI)
-					rotX -= 2.0f * PI;
-
-				float camRotX = tps->diffRotX - player->rot.x;
-				float diffAngleX = rotX - camRotX;
-				float diffAngleZ = rotZ - camera->camRotZ;
-
-				if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+				// make sure the camera's owner has 3d loaded
+				if (player->loadedState && player->loadedState->node)
 				{
-					float prefDist = Settings::f3rdZoom;
-
-					if (g_refTarget->IsFlyingActor())
-						prefDist = Settings::fDragonZoom;
-
-					float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
-					if (abs(curDistance - distance) >= 5.0f)
-					{
-						float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
-						if (newFOV < 30.0f)
-							newFOV = 30.0f;
-
-						SetZoom(newFOV);
-						curDistance = distance;
-					}
+					NiPoint3 ret;
+					ret = player->loadedState->node->m_worldTransform.rot * offset;
+					tps->camPos = headPos + ret;
 				}
-
-				tps->diffRotZ += (rotZ - camera->camRotZ);
-				tps->diffRotX += (rotX - camRotX);
-
-				g_diffRotX = tps->diffRotX;
+				else
+				{
+					// either this or resultPos
+					// however, i prefer fake first person instead of collision pos
+					tps->camPos = headPos;
+				}
 
 				return;
 			}
+				
+			if (isNPCCollided)
+			{
+				NiPoint3 offset(Settings::fHumanCamOffsetX,
+					Settings::fHumanCamOffsetY,
+					Settings::fHumanCamOffsetZ);
+
+				// make sure the camera's owner has 3d loaded
+				if (player->loadedState && player->loadedState->node)
+				{
+					NiPoint3 ret;
+					ret = player->loadedState->node->m_worldTransform.rot * offset;
+					tps->camPos = headPos + ret;
+				}
+				else
+				{
+					// either this or resultPos
+					// however, i prefer fake first person instead of collision pos
+					tps->camPos = headPos;
+				}
+			}
+
+			NiPoint3 targetPos;
+			g_refTarget->GetTargetBonePosition(&targetPos);
+
+			NiPoint3 deltaPos = targetPos - tps->camPos;
+
+			float xy = sqrtf(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+			float rotZ = atan2f(deltaPos.x, deltaPos.y);
+			float rotX = atan2f(deltaPos.z, xy);
+
+			while (rotZ < 0.0f)
+				rotZ += 2.0f * PI;
+			while (rotZ > 2.0f * PI)
+				rotZ -= 2.0f * PI;
+			while (rotX < -PI)
+				rotX += 2.0f * PI;
+			while (rotX > PI)
+				rotX -= 2.0f * PI;
+
+			float camRotX = tps->diffRotX - player->rot.x;
+			float diffAngleX = rotX - camRotX;
+			float diffAngleZ = rotZ - camera->camRotZ;
+
+			if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+			{
+				float prefDist = Settings::f3rdZoom;
+
+				if (g_refTarget->IsFlyingActor())
+					prefDist = Settings::fDragonZoom;
+
+				float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+				if (abs(curDistance - distance) >= 5.0f)
+				{
+					float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+					if (newFOV < 30.0f)
+						newFOV = 30.0f;
+
+					SetZoom(newFOV);
+					curDistance = distance;
+				}
+			}
+
+			tps->diffRotZ += (rotZ - camera->camRotZ);
+			tps->diffRotX += (rotX - camRotX);
+
+			g_diffRotX = tps->diffRotX;
+
+			return;
 		}
 	}
 
+	isFade = false;
 	isPCCollided = false;
 	isNPCCollided = false;
 	curDistance = 0.0f;
 
 	return tps->ProcessCameraCollision();
+}
+
+bool CameraProcessCollision_Hook(Tralala::PlayerCamera* camera, NiPoint3* camPos, bool isFade)
+{
+	Tralala::PlayerCharacter* player = Tralala::PlayerCharacter::GetSingleton();
+
+	if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
+		&& g_refTarget && camera->cameraRefHandle == PlayerRefHandle && player->processManager)
+	{
+		if (camera->objectFadeHandle == PlayerRefHandle)
+		{
+			camera->objectFadeHandle = Tralala::InvalidRefHandle();
+			if (player->processManager->unk10)
+			{
+				UInt32 unkVar = player->processManager->unk10->unk130;
+				if (unkVar == 2)
+				{
+					player->Unk_0x5ECF90();
+				}
+			}
+		}
+		
+		isFade = false;
+	}
+	
+	return camera->ProcessCollision(camPos, isFade);
 }
 
 bool SetFreeLook(Tralala::ThirdPersonState * tps, bool freeLook)
@@ -1891,6 +1958,38 @@ extern "C"
 				return false;
 
 			SafeWrite16(g_thirdCamUpdateAddr + 0x5, NOP16);
+		}
+
+		{
+			struct InstallHookCameraCollisionCode : Xbyak::CodeGenerator {
+				InstallHookCameraCollisionCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x20);
+
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x20);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(funcAddr);
+
+					L(retnLabel);
+					dq(g_camCollisionAddr + 0x5);
+				}
+			};
+
+			void* codeBuf = g_localTrampoline.StartAlloc();
+			InstallHookCameraCollisionCode code(codeBuf, GetFnAddr(CameraProcessCollision_Hook));
+			g_localTrampoline.EndAlloc(code.getCurr());
+
+
+			if (!g_branchTrampoline.Write5Branch(g_camCollisionAddr, uintptr_t(code.getCode())))
+				return false;
 		}
 
 		Menus::InstallHook();
