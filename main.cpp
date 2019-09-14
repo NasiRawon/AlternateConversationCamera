@@ -31,6 +31,7 @@ float g_thirdDistance = 0.0f;
 float g_worldfovTo = 0.0f;
 float g_firstfovTo = 0.0f;
 float g_delay = 0.0f;
+float g_diffRotX = 0.0f;
 int g_fovStep = 0;
 bool g_isNPC = false;
 bool g_switchProcess = false;
@@ -65,8 +66,7 @@ void MainGetAddresses()
 	const std::array<BYTE, 10> worldFOVpattern = { 0x0F, 0x28, 0xC1, 0xF3, 0x0F, 0x5E, 0xC6, 0x0F, 0x28, 0xF0 };
 	g_defaultWorldFOVAddr = (uintptr_t)scan_memory_data(worldFOVpattern, 0x5F, true, 0x4, 0x8);
 
-	const std::array<BYTE, 10> firstFOVpattern = { 0x0F, 0x28, 0xC1, 0xF3, 0x0F, 0x5E, 0xC6, 0x0F, 0x28, 0xF0 };
-	g_defaultFirstFOVAddr = (uintptr_t)scan_memory_data(firstFOVpattern, 0x6F, true, 0x4, 0x8);
+	g_defaultFirstFOVAddr = (uintptr_t)scan_memory_data(worldFOVpattern, 0x6F, true, 0x4, 0x8);
 
 	const std::array<BYTE, 6> minZoompattern = { 0x8B, 0x47, 0x58, 0x89, 0x47, 0x64 };
 	g_minCurrentZoomAddr = (uintptr_t)scan_memory_data(minZoompattern, 0x6, true, 0x4, 0x8);
@@ -80,11 +80,9 @@ void MainGetAddresses()
 	const std::array<BYTE, 7> lookpattern = { 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x43, 0x1C };
 	g_disablePlayerLookAddr = (uintptr_t)scan_memory(lookpattern, 0x91, false);
 
-	const std::array<BYTE, 7> dialoguepattern = { 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x43, 0x1C };
-	g_dialogueMenuAddr = (uintptr_t)scan_memory(dialoguepattern, 0xB4, false);
+	g_dialogueMenuAddr = (uintptr_t)scan_memory(lookpattern, 0xB4, false);
 
-	const std::array<BYTE, 7> racepattern = { 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x43, 0x1C };
-	g_raceMenuAddr = (uintptr_t)scan_memory(racepattern, 0xBE, false);
+	g_raceMenuAddr = (uintptr_t)scan_memory(lookpattern, 0xBE, false);
 
 	const std::array<BYTE, 6> processMovepattern = { 0x0F, 0x28, 0xF7, 0x48, 0x8B, 0xCB };
 	g_processMovementAddr = (uintptr_t)scan_memory(processMovepattern, 0x4B, false);
@@ -204,6 +202,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 		float distance = 0.0f;
 		float prefDist = Settings::f1stZoom;
 		g_delay = 60.0f; // init delay, so it won't instantly switch to the npc
+		g_diffRotX = 0.0f;
 
 		if (camera->IsCameraThirdPerson())
 		{
@@ -306,17 +305,22 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 		{
 			if (cameraStateIDStarter == Tralala::PlayerCamera::kCameraState_ThirdPerson2)
 			{
+				tps->UpdateMode(!camera->isWeapSheathed);
+
 				if (player->IsNotInFurniture() && camera->IsCameraThirdPerson())
 				{
 					if (!Settings::bSwitchTarget)
+					{
 						player->rot.z = camera->camRotZ;
-
-					player->rot.x -= tps->diffRotX;
-
-					tps->diffRotX = tps->diffRotZ = 0.0f;
+						player->rot.x -= tps->diffRotX;
+					}
+					else
+					{
+						player->rot.x -= g_diffRotX;
+					}
 				}
 
-				tps->UpdateMode(!camera->isWeapSheathed);
+				tps->diffRotX = tps->diffRotZ = 0.0f;
 
 				if (camera->IsCameraFirstPerson())
 					camera->ForceThirdPerson(true);
@@ -326,6 +330,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 			{
 				if (Settings::bSwitchTarget && Settings::bForceThirdPerson && camera->IsCameraThirdPerson())
 				{
+					tps->diffRotX = tps->diffRotZ = 0.0f;
 					tps->UpdateMode(!camera->isWeapSheathed);
 					tps->SetFirstPersonSmooth(minZoom, true);
 				}
@@ -368,7 +373,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 
 	float xy, rotZ, rotX = 0.0f;
 
-	xy = sqrt(pos.x*pos.x + pos.y*pos.y);
+	xy = sqrtf(pos.x*pos.x + pos.y*pos.y);
 	rotZ = atan2f(pos.x, pos.y);
 	rotX = atan2f(-pos.z, xy);
 
@@ -534,7 +539,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 				fps->sittingRot += angleDiffZ;
 				if (calcCrosshairToBoneMag)
 				{
-					if (sqrt(angleDiffX*angleDiffX + angleDiffZ*angleDiffZ) <= 0.0005f)
+					if (sqrtf(angleDiffX*angleDiffX + angleDiffZ*angleDiffZ) <= 0.0005f)
 						diffAngleZ = 0.0f;
 					else
 						diffAngleZ = angleDiffZ;
@@ -583,7 +588,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 	float crosshairDist = 0.0f;
 
 	if (calcCrosshairToBoneMag)
-		crosshairDist = sqrt(diffAngleZ*diffAngleZ + diffAngleX*diffAngleX);
+		crosshairDist = sqrtf(diffAngleZ*diffAngleZ + diffAngleX*diffAngleX);
 
 	return crosshairDist;
 }
@@ -654,8 +659,9 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 			if (Settings::bLockOn || mtm->talkingHandle == 0)
 			{
 				static bool switchReady = false;
-
 				float prefDist = Settings::f1stZoom;
+
+				Tralala::ThirdPersonState* tps = camera->GetThirdPersonCamera();
 
 				if (Settings::bForceFirstPerson || camera->IsCameraFirstPerson())
 				{
@@ -679,27 +685,25 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 				{
 					if (Settings::bSwitchTarget)
 					{
-						Tralala::ThirdPersonState* tps = camera->GetThirdPersonCamera();
-
-						if (g_thirdDistance == 0 && tps->curPosY == tps->dstPosY)
+						if (tps->curPosY == tps->dstPosY)
 						{
-							prefDist = Settings::f3rdZoom;
+							if (g_thirdDistance == 0.0f)
+							{
+								prefDist = Settings::f3rdZoom;
 
-							if (g_refTarget->IsFlyingActor())
-								prefDist = Settings::fDragonZoom;
+								if (g_refTarget->IsFlyingActor())
+									prefDist = Settings::fDragonZoom;
 
-							float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+								float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
 
-							float thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
-							if (thisFOV < 30.0f)
-								thisFOV = 30.0f;
+								float thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+								if (thisFOV < 30.0f)
+									thisFOV = 30.0f;
 
-							SetZoom(thisFOV);
-							g_thirdDistance = distance;
-						}
-						else
-						{
-							if (tps->curPosY == tps->dstPosY)
+								SetZoom(thisFOV);
+								g_thirdDistance = distance;
+							}
+							else
 							{
 								if (g_refTarget->IsTalking() || mtm->unk70)
 								{
@@ -762,6 +766,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 					{
 						if (!g_switchProcess) // init switch process
 						{
+							g_diffRotX = tps->diffRotX;
 							float targetDist = RotateCamera(camera, player, g_refTarget, controller, true);
 							if (targetDist <= 0.001f)
 								switchReady = true;
@@ -770,7 +775,6 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 						{
 							switchReady = true;
 						}
-
 					}
 					else
 					{
@@ -897,7 +901,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 
 			NiPoint3 deltaPos = targetPos - tps->camPos;
 
-			float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+			float xy = sqrtf(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
 			float rotZ = atan2f(deltaPos.x, deltaPos.y);
 			float rotX = atan2f(deltaPos.z, xy);
 
@@ -993,7 +997,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 
 				NiPoint3 deltaPos = targetPos - tps->camPos;
 
-				float xy = sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+				float xy = sqrtf(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
 				float rotZ = atan2f(deltaPos.x, deltaPos.y);
 				float rotX = atan2f(deltaPos.z, xy);
 
@@ -1031,6 +1035,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 
 				tps->diffRotZ += (rotZ - camera->camRotZ);
 				tps->diffRotX += (rotX - camRotX);
+
+				g_diffRotX = tps->diffRotX;
 
 				return;
 			}

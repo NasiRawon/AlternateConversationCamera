@@ -14,16 +14,16 @@ namespace Tralala
 {
 	bool g_isTrainingMenu = false;
 
-	void HUDMenuNextFrame_Hook(Tralala::HUDMenu* hudMenu)
+	void HUDMenuNextFrame_Hook(HUDMenu* hudMenu)
 	{
 		if (!Settings::bLetterBox)
 			return;
 
-		Tralala::GFxValue messagesBlock;
+		GFxValue messagesBlock;
 
 		if (hudMenu->hudBaseInstance.GetMember("MessagesBlock", &messagesBlock))
 		{
-			Tralala::GFxValue::DisplayInfo dispInfo;
+			GFxValue::DisplayInfo dispInfo;
 
 			if (messagesBlock.GetDisplayInfo(&dispInfo))
 			{
@@ -40,7 +40,7 @@ namespace Tralala
 
 				static UInt64 counter = 0;
 
-				Tralala::MenuTopicManager* mtm = Tralala::MenuTopicManager::GetSingleton();
+				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 				if (!mtm)
 					return;
 				
