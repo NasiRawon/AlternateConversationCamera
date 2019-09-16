@@ -583,10 +583,11 @@ namespace Tralala
 		bool IsOnMount();
 		bool IsOnCarriage();
 		bool IsTalking();
+		bool IsInAir();
 		void SetAngleX(float angle);
 		void SetAngleZ(float angle);
 
-		void GetTargetBonePosition(NiPoint3 *pos);
+		void GetTargetNeckPosition(NiPoint3 *pos);
 		TESObjectWEAP* GetEquippedWeapon(bool isLeftHand);
 		bool IsFlyingActor();
 		bool IsNotInFurniture();

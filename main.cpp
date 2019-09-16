@@ -46,9 +46,7 @@ uintptr_t g_dialogueMenuAddr = 0;
 uintptr_t g_raceMenuAddr = 0;
 uintptr_t g_processMovementAddr = 0;
 uintptr_t g_minCurrentZoomAddr = 0;
-uintptr_t g_zoomSpeedAddr = 0;
 uintptr_t g_onPlayerDeathAddr = 0;
-uintptr_t g_setObjectFadeAddr = 0;
 uintptr_t g_freeLookAddr = 0;
 uintptr_t g_firstFOVAddr = 0;
 uintptr_t g_targetLocAddr = 0;
@@ -72,9 +70,6 @@ void MainGetAddresses()
 	const std::array<BYTE, 6> minZoompattern = { 0x8B, 0x47, 0x58, 0x89, 0x47, 0x64 };
 	g_minCurrentZoomAddr = (uintptr_t)scan_memory_data(minZoompattern, 0x6, true, 0x4, 0x8);
 
-	const std::array<BYTE, 6> zoomSpeedpattern = { 0x0F, 0x28, 0xCB, 0x0F, 0x54, 0xCD };
-	g_zoomSpeedAddr = (uintptr_t)scan_memory_data(zoomSpeedpattern, 0x17, false, 0x4, 0x8);
-
 	const std::array<BYTE, 11> cameraMovepattern = { 0x4C, 0x8B, 0xC3, 0x48, 0x8B, 0xD7, 0xB9, 0x14, 0x00, 0x00, 0x00 };
 	g_onCameraMoveAddr = (uintptr_t)scan_memory(cameraMovepattern, 0x6F, false);
 
@@ -90,9 +85,6 @@ void MainGetAddresses()
 
 	const std::array<BYTE, 11> playerDeathpattern = { 0x4C, 0x8B, 0xC3, 0x48, 0x8B, 0xD7, 0xB9, 0x14, 0x00, 0x00, 0x00 };
 	g_onPlayerDeathAddr = (uintptr_t)scan_memory(playerDeathpattern, 0xD0, true);
-
-	const std::array<BYTE, 8> setFadepattern = { 0xF3, 0x0F, 0x10, 0x55, 0x80, 0x0F, 0x28, 0xCA };
-	g_setObjectFadeAddr = (uintptr_t)scan_memory(setFadepattern, 0xBD, true);
 
 	const std::array<BYTE, 4> freeLookpattern = { 0x80, 0x79, 0x4B, 0x00 };
 	g_freeLookAddr = (uintptr_t)scan_memory(freeLookpattern, 0x10, false);
@@ -234,7 +226,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 		{
 			zoom = true;
 			cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_FirstPerson;
-			if (Settings::bSwitchTarget && Settings::bForceThirdPerson)
+			if (Settings::bForceThirdPerson)
 			{
 				camera->ForceThirdPerson(true);
 
@@ -332,7 +324,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 			}
 			else
 			{
-				if (Settings::bSwitchTarget && Settings::bForceThirdPerson && camera->IsCameraThirdPerson())
+				if (Settings::bForceThirdPerson && camera->IsCameraThirdPerson())
 				{
 					tps->diffRotX = tps->diffRotZ = 0.0f;
 					tps->UpdateMode(!camera->isWeapSheathed);
@@ -362,17 +354,13 @@ void MenuEventHandler(MenuOpenCloseEvent * evn)
 				camera->firstPersonFOV = *(float*)g_defaultFirstFOVAddr;
 			}
 		}
-
-		racesexMenu.Release();
 	}
 }
 
 float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Tralala::Actor* target, Tralala::TESCameraController* controller, bool calcCrosshairToBoneMag)
 {
 	NiPoint3 pos;
-	if (!camera->GetDistanceWithTargetBone(target, &pos))
-		return 0.0f;
-
+	camera->GetDistanceWithTargetBone(target, &pos);
 	controller->unk1C = 1;
 
 	float xy, rotZ, rotX = 0.0f;
@@ -392,24 +380,11 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 		{
 			float angleDiffZ, angleDiffX;
 			{
-				tps->diffRotZ = 0.0f;
+				source->rot.x -= tps->diffRotX;
+				tps->diffRotX = tps->diffRotZ = 0.0f;
 
 				angleDiffZ = rotZ - source->rot.z;
-				angleDiffX = rotX - (source->rot.x - tps->diffRotX);
-
-				if (Settings::bForceFirstPerson)
-				{
-					float zoomSpeed = *(float*)g_zoomSpeedAddr;
-					float deltaTime = *(float*)Tralala::g_deltaTimeAddr;
-					float nextZoom = tps->curPosY - (zoomSpeed*deltaTime);
-
-					if (nextZoom < tps->dstPosY)
-					{
-						source->rot.x -= tps->diffRotX;
-
-						tps->diffRotX = tps->diffRotZ = 0.0f;
-					}
-				}
+				angleDiffX = rotX - source->rot.x;
 				
 				while (angleDiffZ < -PI)
 					angleDiffZ += 2.0f * PI;
@@ -428,6 +403,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 
 			float angleZ, angleX;
 			{
+
 				angleZ = source->rot.z + angleDiffZ;
 				angleX = source->rot.x + angleDiffX;
 
@@ -629,9 +605,10 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 				if (player->IsCasting()) // fix for spell
 					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
-			}
 
-			isNPCVar.Release();
+				if (Settings::bConversationHT && player->IsOnMount())
+					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
+			}
 		}
 			
 
@@ -815,16 +792,50 @@ void OnPlayerDeath()
 
 float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 {
-	if (!Tralala::MenuTopicManager::GetSingleton()->isInDialogueState)
+	static float npcCamPosZ = 0.0f;
+
+	if (!Settings::bSwitchTarget || !Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
+		|| !g_refTarget)
+	{
+		npcCamPosZ = 0.0f;
 		return actor->GetCameraHeight();
+	}
 
 	NiPoint3 headPos;
-	bool ret = false;
+	bool ret = true;
 
-	if(!actor->GetTargetHeadNodePosition(&headPos, &ret))
+	if (!actor->GetTargetHeadNodePosition(&headPos, &ret))
+		actor->GetMarkerPosition(&headPos);
+
+	float camPosZ = headPos.z - actor->pos.z;
+
+	Tralala::PlayerCharacter * player = Tralala::PlayerCharacter::GetSingleton();
+	if (actor == player)
+	{
+		if (!actor->IsNotInFurniture())
+			return camPosZ + 6.0f;
+
 		return actor->GetCameraHeight();
+	}
+	else
+	{
+		if (!ret)
+			return camPosZ;
 
-	return (headPos.z - actor->pos.z);
+		if (actor->IsInAir() || actor->IsSneaking())
+			return camPosZ;
+
+		if (actor->actorState.IsWeaponDrawn() ||
+			!actor->IsNotInFurniture())
+		{
+			if (npcCamPosZ <= 0.0f)
+				npcCamPosZ = camPosZ + 6.0f;
+
+			return npcCamPosZ;
+		}
+		
+		return camPosZ;
+	}
 }
 
 void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
@@ -839,6 +850,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 	static bool isNPCCollided = false;
 	static bool isFade = false;
 	static float curDistance = 0.0f;
+	static float pcHeight = 0.0f;
+	static float npcHeight = 0.0f;
 
 	if (Tralala::MenuTopicManager::GetSingleton()->isInDialogueState && g_refTarget && player->parentCell)
 	{
@@ -851,7 +864,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			NiPoint3 headPos;
 			bool headPosRet = true;
 			if (!g_refTarget->GetTargetHeadNodePosition(&headPos, &headPosRet))
-				g_refTarget->GetTargetBonePosition(&headPos);
+				g_refTarget->GetMarkerPosition(&headPos);
 
 			NiPoint3 resultPos;
 			resultPos = tps->camPos;
@@ -903,7 +916,17 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			}
 
 			NiPoint3 targetPos;
-			player->GetTargetBonePosition(&targetPos);
+			player->GetTargetNeckPosition(&targetPos);
+
+			if (!player->IsSneaking() && player->actorState.IsWeaponDrawn())
+			{
+				if (pcHeight <= 0.0f)
+					pcHeight = targetPos.z - player->pos.z;
+
+				targetPos.x = player->pos.x;
+				targetPos.y = player->pos.y;
+				targetPos.z = player->pos.z + pcHeight;
+			}
 
 			NiPoint3 deltaPos = targetPos - tps->camPos;
 
@@ -937,19 +960,19 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					curDistance = distance;
 				}
 			}
-
-			tps->diffRotZ += (rotZ - camera->camRotZ);
-			tps->diffRotX += (rotX - camRotX);
-
+			
+			tps->diffRotZ += diffAngleZ;
+			tps->diffRotX += diffAngleX;
+			
 			return;
 		}
 		else
 		{
 			
 			NiPoint3 targetHeadPos;
-			bool targetHeadPosRet = false;
+			bool targetHeadPosRet = true;
 			if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
-				g_refTarget->GetTargetBonePosition(&targetHeadPos);
+				g_refTarget->GetMarkerPosition(&targetHeadPos);
 
 			NiPoint3 headPos;
 			bool headPosRet = false;
@@ -1034,7 +1057,17 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			}
 
 			NiPoint3 targetPos;
-			g_refTarget->GetTargetBonePosition(&targetPos);
+			g_refTarget->GetTargetNeckPosition(&targetPos);
+
+			if (!g_refTarget->IsSneaking() && g_refTarget->actorState.IsWeaponDrawn() && targetHeadPosRet)
+			{
+				if (npcHeight <= 0.0f)
+					npcHeight = targetPos.z - g_refTarget->pos.z;
+
+				targetPos.x = g_refTarget->pos.x;
+				targetPos.y = g_refTarget->pos.y;			
+				targetPos.z = g_refTarget->pos.z + npcHeight;
+			}
 
 			NiPoint3 deltaPos = targetPos - tps->camPos;
 
@@ -1074,8 +1107,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				}
 			}
 
-			tps->diffRotZ += (rotZ - camera->camRotZ);
-			tps->diffRotX += (rotX - camRotX);
+			tps->diffRotZ += diffAngleZ;
+			tps->diffRotX += diffAngleX;
 
 			g_diffRotX = tps->diffRotX;
 
@@ -1087,6 +1120,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 	isPCCollided = false;
 	isNPCCollided = false;
 	curDistance = 0.0f;
+	pcHeight = 0.0f;
+	npcHeight = 0.0f;
 
 	return tps->ProcessCameraCollision();
 }
@@ -1130,28 +1165,6 @@ bool SetFreeLook(Tralala::ThirdPersonState * tps, bool freeLook)
 	return freeLook;
 }
 
-
-bool TPSOnUpdate_Hook(Tralala::ThirdPersonState* tps)
-{
-	Tralala::PlayerCamera* camera = (Tralala::PlayerCamera*)tps->camera;
-
-	if (!tps->toggleAnimCam)
-	{
-		if (Settings::bSwitchTarget && Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
-			&& g_refTarget && (camera->cameraRefHandle != PlayerRefHandle))
-		{
-			Tralala::PlayerControls* control = Tralala::PlayerControls::GetSingleton();
-			tps->ProcessIdleCameraRot(&control->data24.unk02C);
-
-			return true;
-		}
-			
-		return false;
-	}
-
-	return true;
-}
-
 void SetTargetLocationHook(Tralala::ActorProcessManager* apm, Tralala::TESObjectREFR* source, NiPoint3* location)
 {
 
@@ -1173,7 +1186,7 @@ void SetTargetLocationHook(Tralala::ActorProcessManager* apm, Tralala::TESObject
 	NiPoint3 pos;
 
 	Tralala::Actor* actor = (Tralala::Actor*)target;
-	actor->GetTargetBonePosition(&pos);
+	actor->GetMarkerPosition(&pos);
 
 	return apm->SetTargetLocation(source, &pos);
 }
@@ -1578,52 +1591,6 @@ extern "C"
 				return false;
 		}
 
-#if 0
-		{
-			struct InstallHookSetObjectFade_Code : Xbyak::CodeGenerator {
-				InstallHookSetObjectFade_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-					
-					push(rcx);
-					push(rdx);
-					push(r8);
-					push(r9);
-					sub(rsp, 0x20);
-
-					mov(rcx, ptr[rsp + 0x90]);
-					call(ptr[rip + funcLabel]);
-
-					add(rsp, 0x20);
-					pop(r9);
-					pop(r8);
-					pop(rdx);
-					pop(rcx);
-
-					mov(ptr[rsp + 0x50], rax);
-					mov(rdx, ptr[rsp + 0x50]);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(funcAddr);
-
-					L(retnLabel);
-					dq(g_setObjectFadeAddr + 0x5);
-				}
-			};
-
-			void * codeBuf = g_localTrampoline.StartAlloc();
-			InstallHookSetObjectFade_Code code(codeBuf, GetFnAddr(SetObjectFade));
-			g_localTrampoline.EndAlloc(code.getCurr());
-
-			
-			if (!g_branchTrampoline.Write5Branch(g_setObjectFadeAddr, uintptr_t(code.getCode())))
-				return false;
-		}
-#endif
-
 		{
 			struct InstallHookSetFreeLook_Code : Xbyak::CodeGenerator {
 				InstallHookSetFreeLook_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
@@ -1912,52 +1879,6 @@ extern "C"
 
 			if (!g_branchTrampoline.Write5Branch(g_thirdCamColAddr, uintptr_t(code.getCode())))
 				return false;
-		}
-
-		{
-			struct InstallHookCameraUpdateCode : Xbyak::CodeGenerator {
-				InstallHookCameraUpdateCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
-				{
-					Xbyak::Label retnLabel1;
-					Xbyak::Label retnLabel2;
-					Xbyak::Label funcLabel;
-					Xbyak::Label skip;
-
-					sub(rsp, 0x20);
-
-					mov(rcx, rbx);
-					call(ptr[rip + funcLabel]);
-
-					add(rsp, 0x20);
-					
-					test(al, al);
-					jne(skip);
-
-					jmp(ptr[rip + retnLabel1]);
-
-					L(skip);
-					jmp(ptr[rip + retnLabel2]);
-
-					L(funcLabel);
-					dq(funcAddr);
-
-					L(retnLabel1);
-					dq(g_thirdCamUpdateAddr + 0x9);
-
-					L(retnLabel2);
-					dq(g_thirdCamUpdateAddr + 0x26);
-				}
-			};
-
-			void* codeBuf = g_localTrampoline.StartAlloc();
-			InstallHookCameraUpdateCode code(codeBuf, GetFnAddr(TPSOnUpdate_Hook));
-			g_localTrampoline.EndAlloc(code.getCurr());
-
-
-			if (!g_branchTrampoline.Write5Branch(g_thirdCamUpdateAddr, uintptr_t(code.getCode())))
-				return false;
-
-			SafeWrite16(g_thirdCamUpdateAddr + 0x5, NOP16);
 		}
 
 		{

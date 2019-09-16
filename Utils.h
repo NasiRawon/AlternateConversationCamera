@@ -149,6 +149,7 @@ namespace Tralala
 
 			Ref();
 			Ref(const char * buf);
+			~Ref();
 			void Release();
 
 			bool operator==(const Ref& lhs) const { return data == lhs.data; }

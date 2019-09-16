@@ -109,6 +109,11 @@ namespace Tralala
 		ctor(this, buf);
 	}
 
+	StringCache::Ref::~Ref()
+	{
+		Release();
+	}
+
 	void StringCache::Ref::Release()
 	{
 		typedef void(*dtor_t)(StringCache::Ref*);

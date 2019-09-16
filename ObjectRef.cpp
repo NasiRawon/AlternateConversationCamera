@@ -21,6 +21,7 @@ namespace Tralala
 	uintptr_t g_getFurnHandleAddr = 0;
 	uintptr_t g_getbhkWorldMAddr = 0;
 	uintptr_t g_unk_0x5ECF90Addr = 0;
+	uintptr_t g_isInAirAddr = 0;
 
 	void ObjectRefGetAddresses()
 	{
@@ -76,6 +77,9 @@ namespace Tralala
 
 		const std::array<BYTE, 8> unkpattern = { 0x0F, 0x28, 0xDF, 0x4C, 0x8D, 0x44, 0x24, 0x60 };
 		g_unk_0x5ECF90Addr = (uintptr_t)scan_memory_data(unkpattern, 0x7E, true, 0x1, 0x5);
+
+		const std::array<BYTE, 7> airpattern = { 0x83, 0x7D, 0x50, 0x00, 0x0F, 0x94, 0xC3 };
+		g_isInAirAddr = (uintptr_t)scan_memory_data(airpattern, 0x9B, false, 0x1, 0x5);
 	}
 
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
@@ -196,6 +200,14 @@ namespace Tralala
 		return false;
 	}
 
+	bool Actor::IsInAir()
+	{
+		typedef bool(*IsInAir_t)(Actor*);
+		IsInAir_t IsInAir = (IsInAir_t)g_isInAirAddr;
+
+		return IsInAir(this);
+	}
+
 	void Actor::SetAngleX(float angle)
 	{
 		typedef void(*SetAngleX_t)(Actor * actor, float angle);
@@ -212,152 +224,20 @@ namespace Tralala
 		SetAngleZ(this, angle);
 	}
 
-	void Actor::GetTargetBonePosition(NiPoint3 * pos)
+	void Actor::GetTargetNeckPosition(NiPoint3 * pos)
 	{
-		if (!race)
+		NiAVObject* node = this->GetNiNode();
+		if (!node)
+			return GetMarkerPosition(pos);
+		
+		BSFixedString neckName("NPC Neck [Neck]");
+		node = node->GetObjectByName(&neckName.data);
+		if (!node)
 			return GetMarkerPosition(pos);
 
-		BGSBodyPartData* bodyPart = race->bodyPartData;
-
-		if (bodyPart)
-		{
-			NiAVObject* object = (NiAVObject*)GetNiNode();
-			if (object)
-			{
-				const char * necknameData;
-
-				if (bodyPart->formID == 0x13492 || bodyPart->formID == 0x401BC4A){
-					necknameData = "NPC NeckHub";
-				}
-				else if (bodyPart->formID == 0xBA549){
-					necknameData = "Mcrab_Body";
-				}
-				else if (bodyPart->formID == 0x4FBF5) {
-					necknameData = "Canine_Neck2";
-				}
-				else if (bodyPart->formID == 0x60716){
-					necknameData = "HorseNeck4";
-				}
-				else if (bodyPart->formID == 0x20E26){
-					necknameData = "Sabrecat_Neck[Nek2]";
-				}
-				else if (bodyPart->formID == 0x76B30){
-					necknameData = "ElkNeck4";
-				}
-				else if (bodyPart->formID == 0x868FC){
-					necknameData = "NPC Neck2";
-				}
-				else if (bodyPart->formID == 0x6DC9C){
-					necknameData = "RabbitNeck2";
-				}
-				else if (bodyPart->formID == 0xA919E){
-					necknameData = "Neck2";
-				}
-				else if (bodyPart->formID == 0x8691C){
-					necknameData = "FireAtronach_Neck [Neck]";
-				}
-				else if (bodyPart->formID == 0x6B7C9){
-					necknameData = "Jaw";
-				}
-				else if (bodyPart->formID == 0x517AB || bodyPart->formID == 0x4028537){
-					necknameData = "NPC Neck [Neck]2";
-				}
-				else if (bodyPart->formID == 0x59060){
-					necknameData = "[Neck3]";
-				}
-				else if (bodyPart->formID == 0x2005205){
-					necknameData = "ChaurusFlyerNeck";
-				}
-				else if (bodyPart->formID == 0x4E782){
-					necknameData = "Neck3";
-				}
-				else if (bodyPart->formID == 0x43592){
-					necknameData = "DragPriestNPC Neck [Neck]";
-				}
-				else if (bodyPart->formID == 0x5DDA2 || bodyPart->formID == 0x4017F53){
-					necknameData = "NPC Neck";
-				}
-				else if (bodyPart->formID == 0x17929){
-					necknameData = "[body]";
-				}
-				else if (bodyPart->formID == 0x6F276){
-					necknameData = "Goat_Neck4";
-				}
-				else if (bodyPart->formID == 0x8CA6B){
-					necknameData = "Horker_Neck4";
-				}
-				else if (bodyPart->formID == 0x538F9){
-					necknameData = "IW Seg01";
-				}
-				else if (bodyPart->formID == 0x59255){
-					necknameData = "Mammoth Neck";
-				}
-				else if (bodyPart->formID == 0x264EF){
-					necknameData = "Neck";
-				}
-				else if (bodyPart->formID == 0x42529){
-					necknameData = "Wisp Neck";
-				}
-				else if (bodyPart->formID == 0x86F43){
-					necknameData = "Witchlight Body Lag";
-				}
-				else if (bodyPart->formID == 0x40C6A){
-					necknameData = "SlaughterfishNeck";
-				}
-				else if (bodyPart->formID == 0x4019AD2){
-					necknameData = "Neck [Neck]";
-				}
-				else if (bodyPart->formID == 0x401FEB9){
-					necknameData = "NetchPelvis [Pelv]";
-				}
-				else if (bodyPart->formID == 0x401E2A3){
-					necknameData = "Boar_Reikling_Neck";
-				}
-				else if (bodyPart->formID == 0x401DCBC){
-					necknameData = "NPC COM [COM ]";
-				}
-				else if (bodyPart->formID == 0x402B018){
-					necknameData = "MainBody";
-				}
-				else if (bodyPart->formID == 0x7874D){
-					necknameData = "NPC Spine2";
-				}
-				else if (bodyPart->formID == 0x81C7A){
-					necknameData = "DwarvenSpiderBody";
-				}
-				else if (bodyPart->formID == 0x800EC){
-					necknameData = "NPC LowerJaw";
-				}
-				else{
-					necknameData = "NPC Neck [Neck]";
-				}
-
-				BSFixedString neckname(necknameData);
-
-				object = object->GetObjectByName(&neckname.data);
-				if (object)
-				{
-					pos->x = object->m_worldTransform.pos.x;
-					pos->y = object->m_worldTransform.pos.y;
-					pos->z = object->m_worldTransform.pos.z;
-
-				}
-				else
-				{
-					GetMarkerPosition(pos);
-				}
-
-				neckname.Release();
-			}
-			else
-			{
-				GetMarkerPosition(pos);
-			}
-		}
-		else
-		{
-			GetMarkerPosition(pos);
-		}
+		pos->x = node->m_worldTransform.pos.x;
+		pos->y = node->m_worldTransform.pos.y;
+		pos->z = node->m_worldTransform.pos.z;
 	}
 
 	TESObjectWEAP* Actor::GetEquippedWeapon(bool isLeftHand)
@@ -407,9 +287,6 @@ namespace Tralala
 				*compare = true;
 			else
 				*compare = false;
-
-			name.Release();
-			headName.Release();
 		}
 
 		pos->x = headNode->m_worldTransform.pos.x;
@@ -465,8 +342,6 @@ namespace Tralala
 
 		if (this)
 			ret = this->animGraphHolder.SetAnimationVariableBool(isNPCVar, var);
-
-		isNPCVar.Release();	
 		
 		return ret;
 	}
@@ -478,8 +353,6 @@ namespace Tralala
 
 		if (this)
 			this->animGraphHolder.GetAnimationVariableBool(isNPCVar, ret);
-
-		isNPCVar.Release();
 
 		return ret;
 	}

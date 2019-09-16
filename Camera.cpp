@@ -200,12 +200,9 @@ namespace Tralala
 
 	bool PlayerCamera::GetDistanceWithTargetBone(Tralala::Actor * target, NiPoint3 * dist)
 	{
-		if (!target || !target->GetNiNode())
-			return false;
-
 		NiPoint3 targetPos;
 
-		target->GetTargetBonePosition(&targetPos);
+		target->GetTargetNeckPosition(&targetPos);
 
 		dist->x = targetPos.x - cameraPos.x;
 		dist->y = targetPos.y - cameraPos.y;
@@ -219,7 +216,7 @@ namespace Tralala
 		NiPoint3 neckPos;
 		NiPoint3 camPos;
 		
-		target->GetTargetBonePosition(&neckPos);
+		target->GetTargetNeckPosition(&neckPos);
 
 		if (firstPerson)
 		{
