@@ -214,6 +214,9 @@ namespace Tralala
 
 	void Actor::GetTargetBonePosition(NiPoint3 * pos)
 	{
+		if (!race)
+			return GetMarkerPosition(pos);
+
 		BGSBodyPartData* bodyPart = race->bodyPartData;
 
 		if (bodyPart)
@@ -385,6 +388,9 @@ namespace Tralala
 
 	bool Actor::GetTargetHeadNodePosition(NiPoint3 * pos, bool * compare)
 	{
+		if (!processManager)
+			return false;
+
 		if (!processManager->middleProcess)
 			return false;
 

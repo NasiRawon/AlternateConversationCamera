@@ -302,8 +302,6 @@ namespace Tralala
 		}
 		else
 		{
-			static UInt64 counter = 0;
-
 			MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 			if (!mtm)
 				return *(void**)g_unkStructAddr;

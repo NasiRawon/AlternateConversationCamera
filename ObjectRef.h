@@ -25,6 +25,7 @@ namespace Tralala
 			UInt8  unk00[0x130 - 0x00];
 			UInt32 unk130;
 		};
+		STATIC_ASSERT(offsetof(Data10, unk130) == 0x130);
 		
 		UInt64	unk00;						// 00
 		MiddleProcess* middleProcess;		// 08
