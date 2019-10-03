@@ -111,6 +111,26 @@ namespace Tralala
 		SetCameraState(this, camState);
 	}
 
+	NiCamera* TESCamera::GetNiCamera()
+	{
+		NiCamera* camera = nullptr;
+		std::size_t size = cameraNode->m_children.m_arrayBufLen;
+		for (std::size_t i = 0; i < size; ++i)
+		{
+			NiAVObject* pObj = cameraNode->m_children.m_data[i];
+			if (!pObj)
+				continue;
+
+			if (strcmp(pObj->GetRTTI()->name, "NiCamera") == 0) 
+			{
+				camera = (NiCamera*)pObj;
+				break;
+			}
+
+		}
+		return camera;
+	}
+
 	PlayerCamera * PlayerCamera::GetSingleton()
 	{
 		return *(PlayerCamera**)g_playerCameraAddr;
@@ -172,20 +192,20 @@ namespace Tralala
 		typedef void(*ForceFirstPerson_t)(PlayerCamera * camera);
 		ForceFirstPerson_t ForceFirstPerson = (ForceFirstPerson_t)g_forceFirstPersonAddr;
 
+		ThirdPersonState* tps = GetThirdPersonCamera();
+		tps->savedZoom = tps->curPosY;
+
 		ForceFirstPerson(this);
 	}
 
-	void PlayerCamera::ForceThirdPerson(bool smooth)
+	void PlayerCamera::ForceThirdPerson()
 	{
 		Tralala::ThirdPersonState * tps = GetThirdPersonCamera();
 
 		tps->basePosX = tps->fOverShoulderPosX;
 		tps->basePosY = tps->fOverShoulderCombatAddY;
 		tps->basePosZ = tps->fOverShoulderPosZ;
-		if (smooth)
-			tps->dstPosY = tps->savedZoom;
-		else
-			tps->dstPosY = tps->curPosY;
+		tps->dstPosY = tps->savedZoom;
 
 		SetCameraState(tps);
 	}
@@ -274,5 +294,74 @@ namespace Tralala
 		ProcessCollision_t ProcessCollision = (ProcessCollision_t)g_camProcessColAddr;
 
 		return ProcessCollision(this, camPos, isFade);
+	}
+
+	bool PlayerCamera::IsInCameraView(NiPoint3* pos, int mode)
+	{
+		NiCamera* niCamera = GetNiCamera();
+		if (!niCamera)
+			return false;
+	
+		// project a world space point to screen space
+		float w = pos->x * niCamera->m_aafWorldToCam[3][0] +
+			pos->y * niCamera->m_aafWorldToCam[3][1] + pos->z * niCamera->m_aafWorldToCam[3][2] +
+			niCamera->m_aafWorldToCam[3][3];
+
+		// Check to see if we're on the appropriate side of the camera.
+		if (w > 1e-5f)
+		{
+			float invW = 1.0f / w;
+
+			float screenX = pos->x * niCamera->m_aafWorldToCam[0][0] + pos->y * niCamera->m_aafWorldToCam[0][1] +
+				pos->z * niCamera->m_aafWorldToCam[0][2] + niCamera->m_aafWorldToCam[0][3];
+			float screenY = pos->x * niCamera->m_aafWorldToCam[1][0] + pos->y * niCamera->m_aafWorldToCam[1][1] +
+				pos->z * niCamera->m_aafWorldToCam[1][2] + niCamera->m_aafWorldToCam[1][3];
+
+			screenX *= invW;
+			screenY *= invW;
+
+			screenX *= (niCamera->m_kPort.m_right - niCamera->m_kPort.m_left) * 0.5f;
+			screenY *= (niCamera->m_kPort.m_top - niCamera->m_kPort.m_bottom) * 0.5f;
+
+			screenX += (niCamera->m_kPort.m_right + niCamera->m_kPort.m_left) * 0.5f;
+			screenY += (niCamera->m_kPort.m_top + niCamera->m_kPort.m_bottom) * 0.5f;
+
+			// If on screen return true. Otherwise, we fall through to false.
+			switch (mode)
+			{
+			case kRotate_Fast:
+			{
+				if (screenX >= 0.3125f && screenX <= 0.6875f &&
+					screenY >= 0.28125f && screenY <= 0.71785f)
+				{
+					return true;
+				}
+				break;
+			}
+			case kRotate_Slow:
+			{
+				if (screenX >= 0.375f && screenX <= 0.625f &&
+					screenY >= 0.34375f && screenY <= 0.65625f)
+				{
+					return true;
+				}
+				break;
+			}
+			case KRotate_Stop:
+			{
+				if (screenX >= 0.4375f && screenX <= 0.5625f &&
+					screenY >= 0.40625f && screenY <= 0.59375f)
+				{
+					return true;
+				}
+				break;
+			}
+			default:
+				return false;
+			}
+		}
+
+		return false;
+		
 	}
 }

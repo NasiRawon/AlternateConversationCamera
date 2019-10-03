@@ -123,7 +123,7 @@ void MainGetAddresses()
 
 static void SetZoom(float targetFOV)
 {
-	float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+	float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 	int step = Settings::fCameraSpeed * 3.6f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult;
 	if (step <= 0) step = 1;
@@ -134,7 +134,7 @@ static void SetZoom(float targetFOV)
 
 static void ResetZoom()
 {
-	float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+	float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 	int step = Settings::fCameraSpeed * 3.6f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult;
 	if (step <= 0) step = 1;
@@ -228,7 +228,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 			cameraStateIDStarter = Tralala::PlayerCamera::kCameraState_FirstPerson;
 			if (Settings::bForceThirdPerson)
 			{
-				camera->ForceThirdPerson(true);
+				camera->ForceThirdPerson();
 
 				NiPoint3 shoulderPos;
 				shoulderPos.x = Settings::fAddOverShoulderPosX;
@@ -246,7 +246,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 				prefDist = Settings::fDragonZoom;
 
 			distance = camera->GetDistanceWithTargetBone(actor, true);
-			thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+			thisFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 			if (thisFOV < 20.0f)
 				thisFOV = 20.0f;
 
@@ -265,7 +265,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 					prefDist = Settings::fDragonZoom;
 
 				distance = camera->GetDistanceWithTargetBone(actor, false);
-				thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+				thisFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 				if (thisFOV < 30.0f)
 					thisFOV = 30.0f;
 
@@ -319,7 +319,7 @@ void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
 				tps->diffRotX = tps->diffRotZ = 0.0f;
 
 				if (camera->IsCameraFirstPerson())
-					camera->ForceThirdPerson(true);
+					camera->ForceThirdPerson();
 
 			}
 			else
@@ -396,7 +396,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 					angleDiffX -= 2.0f * PI;
 			}
 
-			float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+			float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 			angleDiffZ = angleDiffZ / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
 			angleDiffX = angleDiffX / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
@@ -443,7 +443,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 					angleDiffX -= 2.0f * PI;
 			}
 
-			float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+			float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 			angleDiffZ = angleDiffZ / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
 			angleDiffX = angleDiffX / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
@@ -496,7 +496,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 					angleDiffX -= 2.0f * PI;
 			}
 
-			float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+			float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 			angleDiffZ = angleDiffZ / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
 			angleDiffX = angleDiffX / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
@@ -549,7 +549,7 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 					angleDiffX -= 2.0f * PI;
 			}
 
-			float mult = round(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
+			float mult = roundf(1.0f / *(float*)Tralala::g_deltaTimeAddr) / 60.0f;
 
 			angleDiffZ = angleDiffZ / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
 			angleDiffX = angleDiffX / (Settings::fCameraSpeed * 1.8f * (*(float*)Tralala::g_deltaTimeAddr) * mult * mult);
@@ -575,6 +575,9 @@ float RotateCamera(Tralala::PlayerCamera * camera, Tralala::Actor* source, Trala
 
 TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 {
+	if (Settings::bHeadTracking && Settings::bConversationHT && player->IsOnMount())
+		player->SetIsNPCAnimVar();
+
 	Tralala::PlayerCamera* camera = Tralala::PlayerCamera::GetSingleton();
 	Tralala::TESCameraController * controller = Tralala::TESCameraController::GetSingleton();
 	Tralala::MenuTopicManager* mtm = Tralala::MenuTopicManager::GetSingleton();
@@ -604,9 +607,6 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 				}
 
 				if (player->IsCasting()) // fix for spell
-					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
-
-				if (Settings::bConversationHT && player->IsOnMount())
 					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
 			}
 		}
@@ -653,7 +653,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 					if (abs(g_firstDistance - distance) >= 5.0f)
 					{
-						float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+						float newFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 						if (newFOV < 20.0f)
 							newFOV = 20.0f;
 
@@ -677,7 +677,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 								float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
 
-								float thisFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+								float thisFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 								if (thisFOV < 30.0f)
 									thisFOV = 30.0f;
 
@@ -729,9 +729,9 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 
 						float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
 
-						if (abs(g_thirdDistance - distance) >= 5.0f)
+						if (abs(g_thirdDistance - distance) >= 10.0f)
 						{
-							float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+							float newFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
 							if (newFOV < 30.0f)
 								newFOV = 30.0f;
 
@@ -805,7 +805,10 @@ float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 	bool ret = true;
 
 	if (!actor->GetTargetHeadNodePosition(&headPos, &ret))
+	{
+		ret = false;
 		actor->GetMarkerPosition(&headPos);
+	}
 
 	float camPosZ = headPos.z - actor->pos.z;
 
@@ -849,6 +852,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 	static bool isPCCollided = false;
 	static bool isNPCCollided = false;
 	static bool isFade = false;
+	static bool pcRotate = true;
+	static bool npcRotate = true;
 	static float curDistance = 0.0f;
 	static float pcHeight = 0.0f;
 	static float npcHeight = 0.0f;
@@ -857,15 +862,21 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 	{
 		if (camera->cameraRefHandle != PlayerRefHandle)
 		{
+			pcRotate = true;
+
 			NiPoint3 targetHeadPos;
 			bool targetHeadPosRet = false;
-			player->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet);
+			if (!player->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
+				player->GetMarkerPosition(&targetHeadPos);
 
 			NiPoint3 headPos;
 			bool headPosRet = true;
 			if (!g_refTarget->GetTargetHeadNodePosition(&headPos, &headPosRet))
+			{
+				headPosRet = false;
 				g_refTarget->GetMarkerPosition(&headPos);
-
+			}
+				
 			NiPoint3 resultPos;
 			resultPos = tps->camPos;
 
@@ -944,39 +955,83 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				rotX -= 2.0f * PI;
 
 			float camRotX = tps->diffRotX - g_refTarget->rot.x;
-			float diffAngleX = rotX - camRotX;
-			float diffAngleZ = rotZ - camera->camRotZ;
+			float diffAngleX = 0.0f;
+			float diffAngleZ = 0.0f;
+			float origDiffAngleX = rotX - camRotX;
+			float origDiffAngleZ = rotZ - camera->camRotZ;
+
+			if (npcRotate)
+			{
+				diffAngleX = rotX - camRotX;
+				diffAngleZ = rotZ - camera->camRotZ;
+
+				while (diffAngleZ < -PI)
+					diffAngleZ += 2.0f * PI;
+				while (diffAngleZ > PI)
+					diffAngleZ -= 2.0f * PI;
+			}
+
+			float distance = camera->GetDistanceWithTargetBone(player, false);
+			if (abs(curDistance - distance) >= 10.0f)
+			{
+				float newFOV = roundf((atanf(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
+				if (newFOV < 30.0f)
+					newFOV = 30.0f;
+
+				SetZoom(newFOV);
+				curDistance = distance;
+			}
 
 			if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
 			{
-				float distance = camera->GetDistanceWithTargetBone(player, false);
-				if (abs(curDistance - distance) >= 5.0f)
-				{
-					float newFOV = round((atanf(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
-					if (newFOV < 30.0f)
-						newFOV = 30.0f;
+				npcRotate = false;
 
-					SetZoom(newFOV);
-					curDistance = distance;
+				while (origDiffAngleZ < -PI)
+					origDiffAngleZ += 2.0f * PI;
+				while (origDiffAngleZ > PI)
+					origDiffAngleZ -= 2.0f * PI;
+
+				float mult = (*(float*)Tralala::g_deltaTimeAddr * 60.f);
+				float multSquared = mult * mult;
+
+				if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::KRotate_Stop))
+				{
+					diffAngleX = origDiffAngleX / (75.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (75.0f * (mult / multSquared));
+				}
+				else if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::kRotate_Slow))
+				{
+					diffAngleX = origDiffAngleX / (50.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (50.0f * (mult / multSquared));
+				}
+				else
+				{
+					diffAngleX = origDiffAngleX / (25.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (25.0f * (mult / multSquared));
 				}
 			}
-			
+
 			tps->diffRotZ += diffAngleZ;
 			tps->diffRotX += diffAngleX;
-			
+
+			isNPCCollided = false;
+
 			return;
 		}
 		else
 		{
-			
 			NiPoint3 targetHeadPos;
 			bool targetHeadPosRet = true;
 			if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
+			{
+				targetHeadPosRet = false;
 				g_refTarget->GetMarkerPosition(&targetHeadPos);
+			}
 
 			NiPoint3 headPos;
 			bool headPosRet = false;
-			player->GetTargetHeadNodePosition(&headPos, &headPosRet);
+			if (player->GetTargetHeadNodePosition(&headPos, &headPosRet))
+				player->GetMarkerPosition(&headPos);
 
 			NiPoint3 resultPos;
 			resultPos = tps->camPos;
@@ -1003,6 +1058,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			{
 				isPCCollided = false;
 				isNPCCollided = false;
+				pcRotate = true;
+				npcRotate = true;
 				curDistance = 0.0f;
 				
 				if (camera->objectFadeHandle == PlayerRefHandle)
@@ -1034,6 +1091,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 
 				return;
 			}
+
+			npcRotate = true;
 				
 			if (isNPCCollided)
 			{
@@ -1085,25 +1144,64 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 				rotX -= 2.0f * PI;
 
 			float camRotX = tps->diffRotX - player->rot.x;
-			float diffAngleX = rotX - camRotX;
-			float diffAngleZ = rotZ - camera->camRotZ;
+			float diffAngleX = 0.0f;
+			float diffAngleZ = 0.0f;
+			float origDiffAngleX = rotX - camRotX;
+			float origDiffAngleZ = rotZ - camera->camRotZ;
 
-			if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+			if (pcRotate)
+			{
+				diffAngleX = rotX - camRotX;
+				diffAngleZ = rotZ - camera->camRotZ;
+
+				while (diffAngleZ < -PI)
+					diffAngleZ += 2.0f * PI;
+				while (diffAngleZ > PI)
+					diffAngleZ -= 2.0f * PI;
+			}
+
+			float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+			if (abs(curDistance - distance) >= 10.0f)
 			{
 				float prefDist = Settings::f3rdZoom;
 
 				if (g_refTarget->IsFlyingActor())
 					prefDist = Settings::fDragonZoom;
 
-				float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
-				if (abs(curDistance - distance) >= 5.0f)
-				{
-					float newFOV = round((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
-					if (newFOV < 30.0f)
-						newFOV = 30.0f;
+				float newFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+				if (newFOV < 30.0f)
+					newFOV = 30.0f;
 
-					SetZoom(newFOV);
-					curDistance = distance;
+				SetZoom(newFOV);
+				curDistance = distance;
+			}
+
+			if (fabs(diffAngleX) < 0.001f && fabs(diffAngleZ) < 0.001f)
+			{
+				pcRotate = false;
+
+				while (origDiffAngleZ < -PI)
+					origDiffAngleZ += 2.0f * PI;
+				while (origDiffAngleZ > PI)
+					origDiffAngleZ -= 2.0f * PI;
+
+				float mult = (*(float*)Tralala::g_deltaTimeAddr * 60.f);
+				float multSquared = mult * mult;
+
+				if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::KRotate_Stop))
+				{
+					diffAngleX = origDiffAngleX / (75.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (75.0f * (mult / multSquared));
+				}
+				else if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::kRotate_Slow))
+				{
+					diffAngleX = origDiffAngleX / (50.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (50.0f * (mult / multSquared));
+				}
+				else
+				{
+					diffAngleX = origDiffAngleX / (25.0f * (mult / multSquared));
+					diffAngleZ = origDiffAngleZ / (25.0f * (mult / multSquared));
 				}
 			}
 
@@ -1111,6 +1209,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 			tps->diffRotX += diffAngleX;
 
 			g_diffRotX = tps->diffRotX;
+			isPCCollided = false;
 
 			return;
 		}
@@ -1119,6 +1218,8 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 	isFade = false;
 	isPCCollided = false;
 	isNPCCollided = false;
+	pcRotate = true;
+	npcRotate = true;
 	curDistance = 0.0f;
 	pcHeight = 0.0f;
 	npcHeight = 0.0f;
@@ -1171,22 +1272,14 @@ void SetTargetLocationHook(Tralala::ActorProcessManager* apm, Tralala::TESObject
 	if (!Settings::bHeadTracking)
 		return apm->SetTargetLocation(source, location);
 
-	Tralala::MenuTopicManager* mtm = Tralala::MenuTopicManager::GetSingleton();
-
 	if (source != Tralala::PlayerCharacter::GetSingleton())
 		return apm->SetTargetLocation(source, location);
 
-	if (!mtm->isInDialogueState)
-		return apm->SetTargetLocation(source, location);
-
-	Tralala::TESObjectREFR* target = mtm->GetDialogueTarget();
-	if (!target || (!target->IsCharacter()))
+	if (!g_refTarget)
 		return apm->SetTargetLocation(source, location);
 
 	NiPoint3 pos;
-
-	Tralala::Actor* actor = (Tralala::Actor*)target;
-	actor->GetMarkerPosition(&pos);
+	g_refTarget->GetMarkerPosition(&pos);
 
 	return apm->SetTargetLocation(source, &pos);
 }

@@ -134,7 +134,7 @@ namespace Tralala
 		tArray<void *>	unkC0;
 
 		static MenuTopicManager * GetSingleton();
-		TESObjectREFR* GetDialogueTarget();
+		NiPointer<TESObjectREFR> GetDialogueTarget();
 	};
 	STATIC_ASSERT(offsetof(MenuTopicManager, currentDialogue) == 0x38);
 	STATIC_ASSERT(offsetof(MenuTopicManager, talkingHandle) == 0x68);

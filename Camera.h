@@ -256,6 +256,7 @@ namespace Tralala
 		UInt8		pad31[7];		// 31
 
 		void SetCameraState(TESCameraState * newCamState);
+		NiCamera* GetNiCamera();
 	};
 	STATIC_ASSERT(offsetof(TESCamera, cameraNode) == 0x20);
 	STATIC_ASSERT(sizeof(TESCamera) == 0x38);
@@ -283,6 +284,13 @@ namespace Tralala
 			kCameraState_Bleedout,
 			kCameraState_Dragon,
 			kNumCameraStates
+		};
+
+		enum
+		{
+			kRotate_Fast = 0,
+			kRotate_Slow,
+			KRotate_Stop
 		};
 
 		struct Data40 // seems to be bstsmallarray, this is very useful for retrieving previous camera state
@@ -341,7 +349,7 @@ namespace Tralala
 		TESCameraState * ProcessCameraTransition(UInt32 srcCamState, UInt32 dstCamState, bool face2face);
 		void SetCameraTarget(Actor* target);
 		void ForceFirstPerson();
-		void ForceThirdPerson(bool smooth);
+		void ForceThirdPerson();
 		void UpdateThirdPersonMode(bool weaponDrawn);
 		bool GetDistanceWithTargetBone(Actor * target, NiPoint3 * dist);
 		float GetDistanceWithTargetBone(Actor * target, bool firstPerson);
@@ -359,6 +367,8 @@ namespace Tralala
 			Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck);
 
 		bool ProcessCollision(NiPoint3* camPos, bool isFade);
+
+		bool IsInCameraView(NiPoint3* pos, int mode);
 
 		static PlayerCamera *	GetSingleton();
 

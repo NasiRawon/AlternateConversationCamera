@@ -73,23 +73,18 @@ namespace Tralala
 		return *(MenuTopicManager**)g_MenuTopicManagerAddr;
 	}
 
-	TESObjectREFR * MenuTopicManager::GetDialogueTarget()
+	NiPointer<TESObjectREFR> MenuTopicManager::GetDialogueTarget()
 	{
-		TESObjectREFR * refr = nullptr;
+		NiPointer<TESObjectREFR> refr;
 		if (talkingHandle != Tralala::InvalidRefHandle())
-			LookupRefByHandle(&talkingHandle, &refr);
+			LookupRefByHandle(talkingHandle, refr);
 
 		if (!refr)
 		{
 			if (handle2 != Tralala::InvalidRefHandle())
-				LookupRefByHandle(&handle2, &refr);
+				LookupRefByHandle(handle2, refr);
 		}
 
-		if (refr)
-		{
-			refr->handleRefObject.DecRef();
-		}
-		
 		return refr;
 	}
 

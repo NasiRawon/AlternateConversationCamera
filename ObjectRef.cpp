@@ -127,9 +127,9 @@ namespace Tralala
 		return *(UInt32*)g_invalidRefHandleAddr;
 	}
 
-	bool LookupRefByHandle(UInt32 * refHandle, TESObjectREFR ** refrOut)
+	bool LookupRefByHandle(UInt32& refHandle, NiPointer<TESObjectREFR>& refrOut)
 	{
-		typedef bool(*LookupREFRByHandle_t)(UInt32 * refHandle, TESObjectREFR ** refrOut);
+		typedef bool(*LookupREFRByHandle_t)(UInt32 &, NiPointer<TESObjectREFR> &);
 		LookupREFRByHandle_t LookupREFRByHandle = (LookupREFRByHandle_t)g_lookupAddr;
 
 		return LookupREFRByHandle(refHandle, refrOut);
@@ -167,6 +167,16 @@ namespace Tralala
 		GetbhkWorldM_t GetbhkWorldM = (GetbhkWorldM_t)g_getbhkWorldMAddr;
 
 		return GetbhkWorldM(parentCell);
+	}
+
+	void TESObjectREFR::IncRef()
+	{
+		handleRefObject.IncRef();
+	}
+
+	void TESObjectREFR::DecRef()
+	{
+		handleRefObject.DecRef();
 	}
 
 	bool Actor::IsOnMount()

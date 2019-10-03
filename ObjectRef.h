@@ -14,7 +14,6 @@ namespace Tralala
 	class BShkbAnimationGraph;
 	class TESObjectREFR;
 
-
 	// 140 
 	class ActorProcessManager
 	{
@@ -214,6 +213,9 @@ namespace Tralala
 		}
 
 		void* GetbhkWorldM();
+
+		void IncRef();
+		void DecRef();
 	};
 
 	STATIC_ASSERT(sizeof(TESObjectREFR) == 0x98);
@@ -222,8 +224,8 @@ namespace Tralala
 	STATIC_ASSERT(offsetof(TESObjectREFR::LoadedState, node) == 0x68);
 
 	UInt32 InvalidRefHandle();
-	bool LookupRefByHandle(UInt32 * refHandle, TESObjectREFR ** refrOut);
-
+	bool LookupRefByHandle(UInt32& refHandle, NiPointer<TESObjectREFR>& refrOut);
+	
 	// 10
 	class ActorState : public IMovementState
 	{
