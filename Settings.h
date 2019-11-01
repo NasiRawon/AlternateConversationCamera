@@ -28,6 +28,7 @@ struct Settings
 	static bool		bHeadTracking;
 	static bool		bConversationHT;
 	static bool		bLetterBox;
+	static bool		bHideDialogueMenu;
 
 	static void Load();
 };

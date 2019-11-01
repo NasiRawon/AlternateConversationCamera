@@ -1,5 +1,6 @@
 #include "ObjectRef.h"
 #include "Menus.h"
+#include "Camera.h"
 #include "Utils.h"
 #include "Settings.h"
 #include "PatternScanner.h"
@@ -8,7 +9,8 @@ uintptr_t g_hudMenuNextFrameAddr = 0;
 uintptr_t g_barterMenuDtorAddr = 0;
 uintptr_t g_trainingMenuCtorAddr = 0;
 uintptr_t g_trainingMenuDtorAddr = 0;
-
+uintptr_t g_dialMenuVtblAddr = 0;
+uintptr_t g_dialNextFrameAddr = 0;
 
 namespace Tralala
 {
@@ -83,6 +85,52 @@ namespace Tralala
 	{
 		g_isTrainingMenu = false;
 	}
+
+	void DialMenuNextFrame_Hook(IMenu* menu, float unk1, UInt32 unk2)
+	{
+		typedef void(*NextFrame_t)(IMenu*, float, UInt32);
+		NextFrame_t NextFrame = (NextFrame_t)g_dialNextFrameAddr;
+
+		GFxMovieView* view = (Tralala::GFxMovieView*)menu->view;
+		if(!view || !Settings::bHideDialogueMenu)
+			return NextFrame(menu, unk1, unk2);
+
+		GFxValue topicListHolder;
+
+		if (view->GetVariable(&topicListHolder, "_root.DialogueMenu_mc.TopicListHolder"))
+		{
+			GFxValue::DisplayInfo displayInfo;
+
+			if (topicListHolder.GetDisplayInfo(&displayInfo))
+			{
+				
+				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
+
+				if (Settings::bSwitchTarget)
+				{
+					PlayerCamera* camera = PlayerCamera::GetSingleton();
+
+					if (camera->cameraRefHandle == PlayerRefHandle && !mtm->unkB9)
+						displayInfo.SetVisible(false);
+					else
+						displayInfo.SetVisible(true);
+				}
+				else
+				{
+					if (mtm->unk70 && !mtm->unkB9)
+						displayInfo.SetVisible(false);
+					else
+						displayInfo.SetVisible(true);
+				}
+				
+
+				topicListHolder.SetDisplayInfo(&displayInfo);
+			}
+		}
+
+
+		return NextFrame(menu, unk1, unk2);
+	}
 }
 
 #include "skse64_common/Utilities.h"
@@ -106,6 +154,11 @@ namespace Menus
 
 		const std::array<BYTE, 8> traindpattern = { 0x48, 0x89, 0x6B, 0x48, 0x48, 0x8B, 0x4B, 0x38 };
 		g_trainingMenuDtorAddr = (uintptr_t)scan_memory(traindpattern, 0x37, true);
+
+		const std::array<BYTE, 9> dialpattern = { 0x48, 0x8D, 0x5E, 0x38, 0x48, 0x89, 0x5C, 0x24, 0x58 };
+		g_dialMenuVtblAddr = (uintptr_t)scan_memory_data(dialpattern, 0x15, false, 0x3, 0x7);
+
+		g_dialNextFrameAddr = (uintptr_t)((void**)g_dialMenuVtblAddr)[5];
 	}
 
 	bool InstallHook()
@@ -281,6 +334,8 @@ namespace Menus
 			if (!g_branchTrampoline.Write5Branch(g_trainingMenuDtorAddr, uintptr_t(code.getCode())))
 				return false;
 		}
+
+		SafeWrite64(g_dialMenuVtblAddr + 0x5 * 8, GetFnAddr(Tralala::DialMenuNextFrame_Hook));
 		
 		return true;
 	}

@@ -116,6 +116,18 @@ namespace Tralala
 
 		CraftingSubMenu*	subMenu;	// 30
 	};
+
+
+	// 50
+	class DialogueMenu : public IMenu,
+		public BSTEventSink<MenuOpenCloseEvent>
+	{
+	public:
+
+		tArray<BSString> topicList;	// 38
+	};
+	STATIC_ASSERT(sizeof(DialogueMenu) == 0x50);
+
 }
 
 namespace Menus

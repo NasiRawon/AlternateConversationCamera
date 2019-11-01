@@ -17,8 +17,6 @@
 
 #include <shlobj.h>
 
-#define PlayerRefHandle 0x100000
-
 IDebugLog				gLog;
 PluginHandle			g_pluginHandle = kPluginHandle_Invalid;
 
@@ -702,7 +700,7 @@ TESObjectWEAP * OnCameraMove(Tralala::PlayerCharacter * player, bool isLeftHand)
 								}
 								else
 								{
-									float delay = (1.0f / 0.016667f) * (*(float*)Tralala::g_deltaTimeAddr);
+									float delay = *(float*)Tralala::g_deltaTimeAddr * 60.f;
 
 									if (g_delay > 0.0f)
 										g_delay -= delay;
@@ -790,7 +788,80 @@ void OnPlayerDeath()
 	}
 }
 
+// FECKIN' PHYSICS
+/*
 float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
+{
+	Tralala::PlayerCharacter* player = Tralala::PlayerCharacter::GetSingleton();
+
+	static float playerHeight = 0.0f;
+	static float npcHeight = 0.0f;
+
+	if (!Settings::bSwitchTarget || !Tralala::MenuTopicManager::GetSingleton()->isInDialogueState
+		|| !g_refTarget)
+	{
+		playerHeight = 0.0f;
+		npcHeight = 0.0f;
+
+		return actor->GetCameraHeight();
+	}
+		
+	NiPoint3 headPos;
+	bool ret = false;
+
+	if (!actor->GetTargetHeadNodePosition(&headPos, &ret))
+		actor->GetMarkerPosition(&headPos);
+
+	float headPosZ = headPos.z - actor->pos.z;
+
+	if (actor->actorState.IsWeaponDrawn() || actor->IsSneaking()
+		|| !actor->IsNotInFurniture())
+		headPosZ += 5.0f;
+
+	if (actor == player)
+	{
+		npcHeight = 0.0f;
+
+		if (playerHeight == 0.0f)
+		{
+			playerHeight = headPosZ;
+			return headPosZ;
+		}
+
+		if (!actor->IsNotInFurniture())
+			return playerHeight;
+
+		if ((headPosZ - playerHeight) >= 3.0f)
+			playerHeight += 0.5f;
+		else if ((headPosZ - playerHeight) <= -3.0f)
+			playerHeight -= 0.5f;
+
+		return playerHeight;
+	}
+	else
+	{
+		playerHeight = 0.0f;
+
+		if (npcHeight == 0.0f)
+		{
+			npcHeight = headPosZ;
+			return headPosZ;
+		}
+
+		if (!actor->IsNotInFurniture())
+			return npcHeight;
+
+		if ((headPosZ - npcHeight) >= 3.0f)
+			npcHeight += 0.5f;
+		else if ((headPosZ - npcHeight) <= -3.0f)
+			npcHeight -= 0.5f;
+
+		return npcHeight;
+	}
+}
+*/
+
+float GetThirdPersonCameraHeight_Hook(Tralala::Actor* actor)
 {
 	static float npcCamPosZ = 0.0f;
 
@@ -812,7 +883,7 @@ float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 
 	float camPosZ = headPos.z - actor->pos.z;
 
-	Tralala::PlayerCharacter * player = Tralala::PlayerCharacter::GetSingleton();
+	Tralala::PlayerCharacter* player = Tralala::PlayerCharacter::GetSingleton();
 	if (actor == player)
 	{
 		if (!actor->IsNotInFurniture())
@@ -836,7 +907,7 @@ float GetThirdPersonCameraHeight_Hook(Tralala::Actor * actor)
 
 			return npcCamPosZ;
 		}
-		
+
 		return camPosZ;
 	}
 }
@@ -969,6 +1040,10 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					diffAngleZ += 2.0f * PI;
 				while (diffAngleZ > PI)
 					diffAngleZ -= 2.0f * PI;
+				while (diffAngleX < -PI)
+					diffAngleX += 2.0f * PI;
+				while (diffAngleX > PI)
+					diffAngleX -= 2.0f * PI;
 			}
 
 			float distance = camera->GetDistanceWithTargetBone(player, false);
@@ -990,24 +1065,33 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					origDiffAngleZ += 2.0f * PI;
 				while (origDiffAngleZ > PI)
 					origDiffAngleZ -= 2.0f * PI;
+				while (origDiffAngleX < -PI)
+					origDiffAngleX += 2.0f * PI;
+				while (origDiffAngleX > PI)
+					origDiffAngleX -= 2.0f * PI;
 
 				float mult = (*(float*)Tralala::g_deltaTimeAddr * 60.f);
-				float multSquared = mult * mult;
 
 				if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::KRotate_Stop))
 				{
-					diffAngleX = origDiffAngleX / (75.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (75.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 90.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 				else if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::kRotate_Slow))
 				{
-					diffAngleX = origDiffAngleX / (50.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (50.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 60.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 				else
 				{
-					diffAngleX = origDiffAngleX / (25.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (25.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 30.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 			}
 
@@ -1020,6 +1104,7 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 		}
 		else
 		{
+
 			NiPoint3 targetHeadPos;
 			bool targetHeadPosRet = true;
 			if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
@@ -1158,6 +1243,10 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					diffAngleZ += 2.0f * PI;
 				while (diffAngleZ > PI)
 					diffAngleZ -= 2.0f * PI;
+				while (diffAngleX < -PI)
+					diffAngleX += 2.0f * PI;
+				while (diffAngleX > PI)
+					diffAngleX -= 2.0f * PI;
 			}
 
 			float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
@@ -1184,24 +1273,33 @@ void TPCamProcessCollision_Hook(Tralala::ThirdPersonState* tps)
 					origDiffAngleZ += 2.0f * PI;
 				while (origDiffAngleZ > PI)
 					origDiffAngleZ -= 2.0f * PI;
+				while (origDiffAngleX < -PI)
+					origDiffAngleX += 2.0f * PI;
+				while (origDiffAngleX > PI)
+					origDiffAngleX -= 2.0f * PI;
 
 				float mult = (*(float*)Tralala::g_deltaTimeAddr * 60.f);
-				float multSquared = mult * mult;
 
 				if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::KRotate_Stop))
 				{
-					diffAngleX = origDiffAngleX / (75.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (75.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 90.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 				else if (camera->IsInCameraView(&targetPos, Tralala::PlayerCamera::kRotate_Slow))
 				{
-					diffAngleX = origDiffAngleX / (50.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (50.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 60.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 				else
 				{
-					diffAngleX = origDiffAngleX / (25.0f * (mult / multSquared));
-					diffAngleZ = origDiffAngleZ / (25.0f * (mult / multSquared));
+					constexpr float speed = 1.0f / 30.f;
+
+					diffAngleX = origDiffAngleX * speed * mult;
+					diffAngleZ = origDiffAngleZ * speed * mult;
 				}
 			}
 

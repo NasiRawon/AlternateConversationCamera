@@ -13,6 +13,7 @@ bool	Settings::bForceThirdPerson = false;
 bool	Settings::bHeadTracking = true;
 bool	Settings::bConversationHT = true;
 bool	Settings::bLetterBox = true;
+bool	Settings::bHideDialogueMenu = true;
 int		Settings::uLetterBoxThickness = 175;
 int		Settings::uLetterBoxSpeed = 5;
 float	Settings::fCameraSpeed = 500.0f;
@@ -76,6 +77,7 @@ void Settings::Load()
 	Settings::f1stZoom = GetPrivateProfileInt(L"Settings", L"u1stZoom", 50, thisPath.c_str());
 	Settings::f3rdZoom = GetPrivateProfileInt(L"Settings", L"u3rdZoom", 75, thisPath.c_str());
 	Settings::fDragonZoom = GetPrivateProfileInt(L"Settings", L"uDragonZoom", 125, thisPath.c_str());
+	Settings::bHideDialogueMenu = GetPrivateProfileInt(L"Settings", L"bHideDialogueMenu", 1, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosX", L"50", posX, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosZ", L"-5", posZ, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosY", L"0", posY, 8, thisPath.c_str());

@@ -5,6 +5,8 @@
 #include "Utils.h"
 #include "Havok.h"
 
+#define PlayerRefHandle 0x100000
+
 namespace Tralala
 {
 	extern uintptr_t g_playerCameraAddr;
