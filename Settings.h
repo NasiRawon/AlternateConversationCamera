@@ -21,7 +21,6 @@ struct Settings
 	static int		uLetterBoxSpeed;
 	static bool		bLockOn;
 	static bool		bForceFirstPerson;
-	static bool		bStopNPCMove;
 	static bool		bSmoothTransition;
 	static bool		bSwitchTarget;
 	static bool		bForceThirdPerson;

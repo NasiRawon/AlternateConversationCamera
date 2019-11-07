@@ -15,7 +15,6 @@ namespace Tralala
 	uintptr_t g_isDialogueMenuCloseAddr = 0;
 	uintptr_t g_containerHandle = 0;
 	uintptr_t g_barterHandle = 0;
-	//uintptr_t g_unkcellinfoAddr = 0;
 
 	void UtilsGetAddresses()
 	{
@@ -52,16 +51,7 @@ namespace Tralala
 		const std::array<BYTE, 7> bartpattern = { 0x4C, 0x8B, 0xEF, 0x48, 0x8B, 0x43, 0x28 };
 		g_barterHandle = (uintptr_t)scan_memory_data(bartpattern, 0x33, false, 0x3, 0x7);
 
-		//static const BYTE payload[] = { 0x0F, 0x94, 0xC0, 0x88, 0x41, 0x0A };
-		//std::vector<BYTE> pattern(payload, payload + sizeof(payload) / sizeof(payload[0]));
-		//g_unkcellinfoAddr = (uintptr_t)scan_memory_data(pattern, 0x10, false, 0x3, 0x7);
-
 	}
-
-	//UnkCellInfo** UnkCellInfo::GetSingleton()
-	//{
-	//	return (UnkCellInfo**)g_unkcellinfoAddr;
-	//}
 
 	TESCameraController* TESCameraController::GetSingleton()
 	{

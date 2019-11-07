@@ -6,7 +6,6 @@
 
 bool	Settings::bLockOn = true;
 bool	Settings::bForceFirstPerson = true;
-bool	Settings::bStopNPCMove = false;
 bool	Settings::bSmoothTransition = true;
 bool	Settings::bSwitchTarget = false;
 bool	Settings::bForceThirdPerson = false;
@@ -64,7 +63,6 @@ void Settings::Load()
 
 	Settings::bLockOn = GetPrivateProfileInt(L"Settings", L"bLockOn", 1, thisPath.c_str());
 	Settings::bForceFirstPerson = GetPrivateProfileInt(L"Settings", L"bForceFirstPerson", 1, thisPath.c_str());
-	Settings::bStopNPCMove = GetPrivateProfileInt(L"Settings", L"bStopNPCMovement", 0, thisPath.c_str());
 	Settings::bSmoothTransition = GetPrivateProfileInt(L"Settings", L"bSmoothTransition", 1, thisPath.c_str());
 	Settings::bSwitchTarget = GetPrivateProfileInt(L"Settings", L"bSwitchTarget", 0, thisPath.c_str());
 	Settings::bForceThirdPerson = GetPrivateProfileInt(L"Settings", L"bForceThirdPerson", 0, thisPath.c_str());

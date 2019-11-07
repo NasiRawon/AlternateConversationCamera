@@ -316,7 +316,7 @@ namespace Tralala
 			if (barterHandle)
 				activeHandle = barterHandle;
 
-			if (mtm->isInDialogueState && !isDialogueMenuClose && !activeHandle && !g_isTrainingMenu)
+			if (g_refTarget && mtm->isInDialogueState && !isDialogueMenuClose && !activeHandle && !g_isTrainingMenu)
 			{
 				DrawLetterBox(pContext, 12, srcHeight);
 

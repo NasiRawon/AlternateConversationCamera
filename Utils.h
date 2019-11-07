@@ -23,6 +23,9 @@ namespace Tralala
 	void UtilsGetAddresses();
 
 	class TESObjectREFR;
+	class Actor;
+
+	extern Actor* g_refTarget;
 
 	// 1E8
 	struct UnkCellInfo
@@ -127,7 +130,7 @@ namespace Tralala
 		UInt8	unkB6;
 		UInt8	unkB7;
 		bool	unkB8;			// seems to be skiptext
-		bool	unkB9;			// actor still talking but dialogue list is refreshed
+		bool	unkB9;			// actor still talking but dialogue list is refreshed, last skiptext
 		UInt8	unkBA;
 		UInt8	unkBB;
 		UInt16	padBC;
@@ -174,6 +177,4 @@ namespace Tralala
 	};
 
 	typedef StringCache::Ref BSFixedString;
-
-	
 }

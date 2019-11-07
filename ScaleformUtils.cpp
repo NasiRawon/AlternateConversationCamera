@@ -143,6 +143,14 @@ namespace Tralala
 		data.string = value;
 	}
 
+	void GFxValue::SetNumber(double value)
+	{
+		CleanManaged();
+
+		type = kType_Number;
+		data.number = value;
+	}
+
 	const char* GFxValue::GetString(void) const
 	{
 		if (GetType() != kType_String)

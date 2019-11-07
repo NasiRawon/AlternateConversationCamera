@@ -40,21 +40,9 @@ namespace Tralala
 
 		const std::array<BYTE, 6> processColPattern = { 0x0F, 0x28, 0xD8, 0x0F, 0x2F, 0xD8 };
 		g_camProcessColAddr = (uintptr_t)scan_memory_data(processColPattern, 0xBF, false, 0x1, 0x5);
-
-		//static const BYTE updateThirdPayload[] = { 0x41, 0x0F, 0xB6, 0xD1, 0x41, 0x0F, 0xB6, 0xD9 };
-		//std::vector<BYTE> updateThirdpattern(updateThirdPayload, updateThirdPayload + sizeof(updateThirdPayload) / sizeof(updateThirdPayload[0]));
-		//g_updateThirdPersonAddr = (uintptr_t)scan_memory_data(updateThirdpattern, 0x1F, true, 0x1, 0x5);
-		
-		//static const BYTE pushTargetPayload[] = { 0x48, 0x83, 0xC1, 0x40, 0x48, 0x8D, 0x53, 0x28 };
-		//std::vector<BYTE> pushTargetpattern(pushTargetPayload, pushTargetPayload + sizeof(pushTargetPayload) / sizeof(pushTargetPayload[0]));
-		//g_pushTargetCamAddr = (uintptr_t)scan_memory_data(pushTargetpattern, 0x13, false, 0x1, 0x5);
-
-		//static const BYTE pushCurPayload[] = { 0x48, 0x83, 0xC1, 0x40, 0x48, 0x8D, 0x53, 0x28 };
-		//std::vector<BYTE> pushCurpattern(pushCurPayload, pushCurPayload + sizeof(pushCurPayload) / sizeof(pushCurPayload[0]));
-		//g_pushCurrentCamAddr = (uintptr_t)scan_memory_data(pushCurpattern, 0x8, true, 0x1, 0x5);
 	}
 
-	float ThirdPersonState::GetDistanceWithinTargetHead(Tralala::Actor * target)
+	float ThirdPersonState::GetDistanceWithinTargetHead(Actor * target)
 	{
 		if (!target || !target->processManager || !target->processManager->middleProcess)
 			return FLT_MAX;
@@ -105,7 +93,7 @@ namespace Tralala
 
 	void TESCamera::SetCameraState(TESCameraState * camState)
 	{
-		typedef UInt32(*SetCameraState_t)(Tralala::TESCamera* camera, Tralala::TESCameraState* cameraState);
+		typedef UInt32(*SetCameraState_t)(TESCamera* camera, TESCameraState* cameraState);
 		SetCameraState_t SetCameraState = (SetCameraState_t)g_setCameraStateAddr;
 
 		SetCameraState(this, camState);
@@ -200,7 +188,7 @@ namespace Tralala
 
 	void PlayerCamera::ForceThirdPerson()
 	{
-		Tralala::ThirdPersonState * tps = GetThirdPersonCamera();
+		ThirdPersonState * tps = GetThirdPersonCamera();
 
 		tps->basePosX = tps->fOverShoulderPosX;
 		tps->basePosY = tps->fOverShoulderCombatAddY;
@@ -218,7 +206,7 @@ namespace Tralala
 		UpdateThirdPersonMode(this, weaponDrawn);
 	}
 
-	bool PlayerCamera::GetDistanceWithTargetBone(Tralala::Actor * target, NiPoint3 * dist)
+	bool PlayerCamera::GetDistanceWithTargetBone(Actor * target, NiPoint3 * dist)
 	{
 		NiPoint3 targetPos;
 
@@ -231,7 +219,7 @@ namespace Tralala
 		return true;
 	}
 
-	float PlayerCamera::GetDistanceWithTargetBone(Tralala::Actor * target, bool firstPerson)
+	float PlayerCamera::GetDistanceWithTargetBone(Actor * target, bool firstPerson)
 	{
 		NiPoint3 neckPos;
 		NiPoint3 camPos;
@@ -240,7 +228,7 @@ namespace Tralala
 
 		if (firstPerson)
 		{
-			Tralala::PlayerCharacter * player = Tralala::PlayerCharacter::GetSingleton();
+			PlayerCharacter * player = PlayerCharacter::GetSingleton();
 
 			camPos.x = player->pos.x;
 			camPos.y = player->pos.y;

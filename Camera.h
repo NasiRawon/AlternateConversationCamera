@@ -111,7 +111,7 @@ namespace Tralala
 		bool					toggleCamMode;				// E1 - 0 is CME Camera3rd node, 1 is normal Camera3rd node
 		UInt8					padE2[5];					// E2
 
-		float	GetDistanceWithinTargetHead(Tralala::Actor * target);
+		float	GetDistanceWithinTargetHead(Actor * target);
 		void	SetFirstPersonSmooth(float minZoom, bool overShoulder = false);
 		void	SetShoulderPos(const NiPoint3& pos);
 		void	ProcessCameraCollision();

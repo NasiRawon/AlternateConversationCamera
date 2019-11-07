@@ -124,7 +124,7 @@ namespace Tralala
 		virtual void	CreateObject(GFxValue* value, const char* className = NULL, GFxValue* args = NULL, UInt32 numArgs = 0);
 		virtual void	CreateArray(GFxValue* value);
 		virtual void	CreateFunction(GFxValue* value, void* callback, void* refcon = NULL);
-		virtual void	SetVariable(const char* name, GFxValue* value, UInt32 flags);
+		virtual bool	SetVariable(const char* name, GFxValue* value, UInt32 flags);
 		virtual bool	GetVariable(GFxValue* value, const char* name);
 		virtual bool	SetArray(UInt32 type, const char* name, UInt32 offset, void* buf, UInt32 len, UInt32 flags);
 		virtual bool	ResizeArray(const char* name, UInt32 len, UInt32 flags);
@@ -185,10 +185,12 @@ namespace Tralala
 	class GFxValue
 	{
 	public:
-		GFxValue()
-			:objectInterface(NULL), type(kType_Undefined) { }
-		GFxValue(const GFxValue& src)
-			:objectInterface(NULL), type(src.type)
+		GFxValue() :
+			objectInterface(NULL), type(kType_Undefined) { }
+		GFxValue(double value) : 
+			objectInterface(NULL), type(kType_Number) { data.number = value; }
+		GFxValue(const GFxValue& src) :
+			objectInterface(NULL), type(src.type)
 		{
 			data = src.data;
 			if (src.IsManaged()) AddManaged(src);
@@ -337,6 +339,7 @@ namespace Tralala
 		bool	SetMember(const char* name, GFxValue* value);
 		bool	SetText(const char* text, bool html);
 		void	SetString(const char* value);
+		void	SetNumber(double value);
 		const char* GetString(void) const;
 	};
 

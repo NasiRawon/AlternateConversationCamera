@@ -335,6 +335,82 @@ namespace Tralala
 		Actor*		actor;	// 08
 	};
 
+	// 08
+	class IMovementSetGoal : public IMovementInterface
+	{
+	public:
+		virtual ~IMovementSetGoal();
+		virtual void Unk_01(void);
+		virtual void Unk_02(void);
+		virtual void ClearPathingRequest(void);
+		virtual void Unk_04(void);
+	};
+
+	class IMovementQueryPathingState : public IMovementInterface
+	{
+	public:
+
+		virtual ~IMovementQueryPathingState();
+
+	};
+
+	// 10
+	class MovementArbiter
+	{
+	public:
+
+		virtual ~MovementArbiter();
+
+		BSIntrusiveRefCounted	refCount; // 08
+		void*					unk10;
+	};
+
+	// 1D0
+	class MovementControllerNPC
+	{
+	public:
+		virtual ~MovementControllerNPC();
+		virtual void Unk_01(void);
+		virtual void Unk_02(void);
+		virtual IMovementInterface* QueryMovementInterface(const BSFixedString &movementInterface);
+		virtual void Unk_04(void);
+		virtual void Unk_05(void);
+		virtual void Unk_06(void);
+		virtual void Unk_07(void);
+		virtual void Unk_08(void);
+		virtual void Unk_09(void);
+		virtual void Unk_0A(void);
+		virtual void Unk_0B(void);
+		virtual void SetAIControl(void);
+		virtual void SetPlayerControl(void);
+		//.....
+
+		UInt8 unk08[0x1D0 - 0x8];
+	};
+	STATIC_ASSERT(sizeof(MovementControllerNPC) == 0x1D0);
+
+	// 80
+	class MovementPathManagerArbiter :
+		public MovementArbiter,
+		public IMovementSetGoal,
+		public IMovementQueryPathingState
+	{
+	public:
+
+		virtual ~MovementPathManagerArbiter();
+
+		tArray<void*>			unk28;					// 28
+		MovementControllerNPC*	movementCtrlNPC;		// 40
+		UInt32					unk48;					// 48
+		void*					unk50;					// 50 - PathingRequest
+		void*					unk58;					// 58
+		void*					unk60;					// 60
+		SimpleLock				unk68;					// 68
+		UInt32					actorRefHandle;			// 70
+		void*					unk78;					// 78
+	};
+	STATIC_ASSERT(sizeof(MovementPathManagerArbiter) == 0x80);
+
 
 	// 2B0 
 	class Actor : public TESObjectREFR
@@ -522,7 +598,7 @@ namespace Tralala
 		TESObjectCELL*	editorCell;						// 130
 		BGSLocation*	editorLocation;					// 138
 		ActorMover*		actorMover;						// 140 ActorMover*
-		void*	unk148;									// 148 MovementControllerNPC*
+		MovementControllerNPC*	movementCtrlNPC;		// 148 MovementControllerNPC*
 		UInt64	unk150;									// 150
 		UInt64	unk158;									// 158
 		UInt64	unk160;									// 160

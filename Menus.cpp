@@ -18,7 +18,7 @@ namespace Tralala
 
 	void HUDMenuNextFrame_Hook(HUDMenu* hudMenu)
 	{
-		if (!Settings::bLetterBox)
+		if (!Settings::bLetterBox || !g_refTarget)
 			return;
 
 		GFxValue messagesBlock;
@@ -92,7 +92,7 @@ namespace Tralala
 		NextFrame_t NextFrame = (NextFrame_t)g_dialNextFrameAddr;
 
 		GFxMovieView* view = (Tralala::GFxMovieView*)menu->view;
-		if(!view || !Settings::bHideDialogueMenu)
+		if(!g_refTarget || !view || !Settings::bHideDialogueMenu)
 			return NextFrame(menu, unk1, unk2);
 
 		GFxValue topicListHolder;
@@ -106,24 +106,44 @@ namespace Tralala
 				
 				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 
+				GFxValue greetingState(0);
+				GFxValue topicShownState(1);
+				GFxValue topicClickedState(2);		
+				GFxValue curState;
+
+				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
+
 				if (Settings::bSwitchTarget)
 				{
 					PlayerCamera* camera = PlayerCamera::GetSingleton();
 
-					if (camera->cameraRefHandle == PlayerRefHandle && !mtm->unkB9)
+					if (camera->cameraRefHandle == PlayerRefHandle)
+					{
+						if (curState.GetType() == 3 && curState.data.number == 1)
+							view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
+
 						displayInfo.SetVisible(false);
+					}		
 					else
+					{
+						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicShownState, 0);
 						displayInfo.SetVisible(true);
+					}
 				}
 				else
 				{
-					if (mtm->unk70 && !mtm->unkB9)
+					if ((curState.GetType() == 3 && curState.data.number == 0) || (mtm->unk70 && !mtm->unkB9))
+					{
+						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
 						displayInfo.SetVisible(false);
+					}
 					else
-						displayInfo.SetVisible(true);
+					{
+						if (curState.GetType() == 3 && curState.data.number == 1)
+							displayInfo.SetVisible(true);
+					}
 				}
 				
-
 				topicListHolder.SetDisplayInfo(&displayInfo);
 			}
 		}

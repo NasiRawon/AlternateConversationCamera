@@ -5,6 +5,7 @@
 
 namespace Tralala
 {
+
 	// 98
 	class HUDMenu : public IMenu
 	{
