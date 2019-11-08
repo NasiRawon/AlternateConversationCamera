@@ -18,7 +18,7 @@ namespace Tralala
 
 	void HUDMenuNextFrame_Hook(HUDMenu* hudMenu)
 	{
-		if (!Settings::bLetterBox || !g_refTarget)
+		if (!Settings::bLetterBox)
 			return;
 
 		GFxValue messagesBlock;
@@ -52,7 +52,7 @@ namespace Tralala
 				if (barterHandle)
 					activeHandle = barterHandle;
 
-				if (mtm->isInDialogueState && !isDialogueMenuClose && !activeHandle && !g_isTrainingMenu)
+				if (mtm->isInDialogueState && !isDialogueMenuClose && !activeHandle && !g_isTrainingMenu && g_zoom)
 				{
 					if (Settings::fMessagePosX == -601.f)
 						dispInfo.SetPosition(oriPosX, Settings::fMessagePosY);
@@ -92,7 +92,7 @@ namespace Tralala
 		NextFrame_t NextFrame = (NextFrame_t)g_dialNextFrameAddr;
 
 		GFxMovieView* view = (Tralala::GFxMovieView*)menu->view;
-		if(!g_refTarget || !view || !Settings::bHideDialogueMenu)
+		if(!view || !Settings::bHideDialogueMenu)
 			return NextFrame(menu, unk1, unk2);
 
 		GFxValue topicListHolder;
@@ -111,12 +111,21 @@ namespace Tralala
 				GFxValue topicClickedState(2);		
 				GFxValue curState;
 
-				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
-
-				if (Settings::bSwitchTarget)
+				if (!g_zoom)
 				{
-					PlayerCamera* camera = PlayerCamera::GetSingleton();
+					if (curState.GetType() == 3 && curState.data.number == 1)
+						displayInfo.SetVisible(true);
 
+					topicListHolder.SetDisplayInfo(&displayInfo);
+
+					return NextFrame(menu, unk1, unk2);
+				}
+
+				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
+				PlayerCamera* camera = PlayerCamera::GetSingleton();
+
+				if (Settings::bSwitchTarget && (Settings::bForceThirdPerson || camera->IsCameraThirdPerson()))
+				{
 					if (camera->cameraRefHandle == PlayerRefHandle)
 					{
 						if (curState.GetType() == 3 && curState.data.number == 1)
@@ -132,6 +141,7 @@ namespace Tralala
 				}
 				else
 				{
+
 					if ((curState.GetType() == 3 && curState.data.number == 0) || (mtm->unk70 && !mtm->unkB9))
 					{
 						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);

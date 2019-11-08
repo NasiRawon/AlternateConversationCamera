@@ -19,13 +19,12 @@ namespace Tralala
 	extern uintptr_t g_containerHandle;
 	extern uintptr_t g_barterHandle;
 	extern bool g_isTrainingMenu;
+	extern bool g_zoom;
 
 	void UtilsGetAddresses();
 
 	class TESObjectREFR;
 	class Actor;
-
-	extern Actor* g_refTarget;
 
 	// 1E8
 	struct UnkCellInfo

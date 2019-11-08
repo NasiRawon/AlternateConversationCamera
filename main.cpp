@@ -119,6 +119,8 @@ namespace Tralala
 	bool g_isNPC = false;
 	bool g_processSwitch = false;
 	bool g_endSwitch = false;
+	bool g_zoom = false;
+	bool g_lock = false;
 
 	Actor* g_refTarget = nullptr;
 
@@ -200,9 +202,11 @@ namespace Tralala
 			g_diffRotX = 0.0f;
 			g_endSwitch = false;
 			g_processSwitch = false;
+			g_lock = true;
 
 			if (camera->IsCameraThirdPerson())
 			{
+				g_zoom = true;
 				cameraStateIDStarter = PlayerCamera::kCameraState_ThirdPerson2;
 
 				if (Settings::bForceFirstPerson)
@@ -224,6 +228,7 @@ namespace Tralala
 			}
 			else
 			{
+				g_zoom = true;
 				cameraStateIDStarter = PlayerCamera::kCameraState_FirstPerson;
 				if (Settings::bForceThirdPerson)
 				{
@@ -283,12 +288,11 @@ namespace Tralala
 		else
 		{		
 
-			if (!g_refTarget)
-			{
-				cameraStateIDStarter = 0;
+			if (!g_zoom)
 				return;
-			}
 
+			g_zoom = false;
+			g_lock = false;
 			g_refTarget = nullptr;
 
 			if (Settings::bHeadTracking)
@@ -321,7 +325,8 @@ namespace Tralala
 
 					tps->diffRotX = tps->diffRotZ = 0.0f;
 
-					if (camera->IsCameraFirstPerson())
+					if (Settings::bForceFirstPerson && 
+						(Settings::bSmoothTransition || camera->IsCameraFirstPerson()))
 						camera->ForceThirdPerson();
 
 				}
@@ -358,7 +363,8 @@ namespace Tralala
 		}
 	}
 
-	float RotateCamera(PlayerCamera * camera, Actor* source, Actor* target, TESCameraController* controller, bool calcCrosshairToBoneMag)
+	float RotateCamera(PlayerCamera * camera, Actor* source, Actor* target, 
+		TESCameraController* controller, bool calcCrosshairToBoneMag)
 	{
 		NiPoint3 pos;
 		camera->GetDistanceWithTargetBone(target, &pos);
@@ -611,7 +617,6 @@ namespace Tralala
 						player->animGraphHolder.SetAnimationVariableBool(isNPCVar, false);
 				}
 			}
-			
 
 			if (g_fovStep > 0)
 			{
@@ -628,24 +633,26 @@ namespace Tralala
 					camera->firstPersonFOV += diff2 / g_fovStep;
 				}
 
-				if (g_refTarget && camera->cameraRefHandle == PlayerRefHandle && !g_processSwitch)
+				if (g_refTarget && camera->cameraRefHandle == PlayerRefHandle && !g_processSwitch && g_lock)
 					RotateCamera(camera, player, g_refTarget, controller, false);
 
 				g_fovStep--;
 			}
 			else
 			{
-				if(!g_refTarget)
+
+				if(!g_refTarget || !g_lock)
 					return player->GetEquippedWeapon(isLeftHand);
 
-				if (Settings::bLockOn || mtm->talkingHandle == 0)
+				if (Settings::bLockOn || mtm->talkingHandle == 0 || g_thirdDistance <= 0.0f)
 				{
 					static bool startSwitch = false;
 					float prefDist = Settings::f1stZoom;
 
 					ThirdPersonState* tps = camera->GetThirdPersonCamera();
 
-					if (Settings::bForceFirstPerson || camera->IsCameraFirstPerson())
+					if (!Settings::bForceThirdPerson && 
+						(Settings::bForceFirstPerson || camera->IsCameraFirstPerson()))
 					{
 						if (g_refTarget->IsFlyingActor())
 							prefDist = Settings::fDragonZoom;
@@ -723,21 +730,24 @@ namespace Tralala
 						}
 						else
 						{
-							prefDist = Settings::f3rdZoom;
-
-							if (g_refTarget->IsFlyingActor())
-								prefDist = Settings::fDragonZoom;
-
-							float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
-
-							if (abs(g_thirdDistance - distance) >= 10.0f)
+							if (tps->curPosY == tps->dstPosY)
 							{
-								float newFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
-								if (newFOV < 30.0f)
-									newFOV = 30.0f;
+								prefDist = Settings::f3rdZoom;
 
-								SetZoom(newFOV);
-								g_thirdDistance = distance;
+								if (g_refTarget->IsFlyingActor())
+									prefDist = Settings::fDragonZoom;
+
+								float distance = camera->GetDistanceWithTargetBone(g_refTarget, false);
+
+								if (abs(g_thirdDistance - distance) >= 10.0f)
+								{
+									float newFOV = roundf((atanf(prefDist / distance) * 2.0f) * 180.0f / PI);
+									if (newFOV < 30.0f)
+										newFOV = 30.0f;
+
+									SetZoom(newFOV);
+									g_thirdDistance = distance;
+								}
 							}
 						}
 					}
@@ -770,7 +780,7 @@ namespace Tralala
 				{
 					float crosshairDist = RotateCamera(camera, player, g_refTarget, controller, true);
 					if (crosshairDist <= 0.001f)
-						g_refTarget = nullptr;
+						g_lock = false;
 				}
 			}
 		}
@@ -1427,7 +1437,8 @@ namespace Tralala
 
 			if (source == player)
 			{
-				if (Settings::bHeadTracking && Settings::bConversationHT && !mtm->isInDialogueState)
+				if (Settings::bHeadTracking && Settings::bConversationHT && 
+					(!mtm->isInDialogueState || !g_refTarget))
 					return true; 
 			}
 
