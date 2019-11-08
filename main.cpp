@@ -244,7 +244,7 @@ namespace Tralala
 				}
 			}
 
-			if (camera->IsCameraFirstPerson() || Settings::bForceFirstPerson)
+			if ((camera->IsCameraFirstPerson() || Settings::bForceFirstPerson) && !Settings::bForceThirdPerson)
 			{
 				if (actor->IsFlyingActor()) // dragon has big head and absurd position xD
 					prefDist = Settings::fDragonZoom;
@@ -257,6 +257,7 @@ namespace Tralala
 				SetZoom(thisFOV);
 
 				g_firstDistance = distance;
+				g_thirdDistance = FLT_MAX;
 				g_refTarget = actor;
 			}
 			else
@@ -676,7 +677,7 @@ namespace Tralala
 						{
 							if (tps->curPosY == tps->dstPosY)
 							{
-								if (g_thirdDistance == 0.0f)
+								if (g_thirdDistance <= 0.0f)
 								{
 									prefDist = Settings::f3rdZoom;
 
