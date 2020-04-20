@@ -113,16 +113,6 @@ namespace Tralala
 				GFxValue curState;
 				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
 
-				if (!g_zoom)
-				{
-					if (curState.GetType() == 3 && curState.data.number == 1)
-						displayInfo.SetVisible(true);
-
-					topicListHolder.SetDisplayInfo(&displayInfo);
-
-					return NextFrame(menu, unk1, unk2);
-				}
-
 				if ((curState.GetType() == 3 && curState.data.number == 0) || (mtm->unk70 && !mtm->unkB9))
 				{
 					view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
