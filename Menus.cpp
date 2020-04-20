@@ -92,7 +92,7 @@ namespace Tralala
 		NextFrame_t NextFrame = (NextFrame_t)g_dialNextFrameAddr;
 
 		GFxMovieView* view = (Tralala::GFxMovieView*)menu->view;
-		if(!view || !Settings::bHideDialogueMenu)
+		if(!view || !g_zoom || !Settings::bHideDialogueMenu)
 			return NextFrame(menu, unk1, unk2);
 
 		GFxValue topicListHolder;
@@ -103,61 +103,43 @@ namespace Tralala
 
 			if (topicListHolder.GetDisplayInfo(&displayInfo))
 			{
-				
 				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
-
-				GFxValue greetingState(0);
-				GFxValue topicShownState(1);
-				GFxValue topicClickedState(2);		
-				GFxValue curState;
-
-				if (!g_zoom)
-				{
-					if (curState.GetType() == 3 && curState.data.number == 1)
-						displayInfo.SetVisible(true);
-
-					topicListHolder.SetDisplayInfo(&displayInfo);
-
-					return NextFrame(menu, unk1, unk2);
-				}
-
-				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
 				PlayerCamera* camera = PlayerCamera::GetSingleton();
 
-				if (Settings::bSwitchTarget && (Settings::bForceThirdPerson || camera->IsCameraThirdPerson()))
+				//GFxValue greetingState(0);
+				//GFxValue topicShownState(1);
+				GFxValue topicClickedState(2);
+
+				GFxValue curState;
+				view->GetVariable(&curState, "_root.DialogueMenu_mc.eMenuState");
+
+				if ((curState.GetType() == 3 && curState.data.number == 0) || (mtm->unk70 && !mtm->unkB9))
+				{
+					view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
+					displayInfo.SetVisible(false);
+				}
+				else if (Settings::bSwitchTarget && (Settings::bForceThirdPerson || camera->IsCameraThirdPerson()))
 				{
 					if (camera->cameraRefHandle == PlayerRefHandle)
 					{
-						if (curState.GetType() == 3 && curState.data.number == 1)
-							view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
-
 						displayInfo.SetVisible(false);
 					}		
-					else
+					else if (curState.GetType() == 3 && curState.data.number == 1)
 					{
-						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicShownState, 0);
 						displayInfo.SetVisible(true);
 					}
 				}
 				else
 				{
-
-					if ((curState.GetType() == 3 && curState.data.number == 0) || (mtm->unk70 && !mtm->unkB9))
+					if (curState.GetType() == 3 && curState.data.number == 1)
 					{
-						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
-						displayInfo.SetVisible(false);
-					}
-					else
-					{
-						if (curState.GetType() == 3 && curState.data.number == 1)
-							displayInfo.SetVisible(true);
+						displayInfo.SetVisible(true);
 					}
 				}
 				
 				topicListHolder.SetDisplayInfo(&displayInfo);
 			}
 		}
-
 
 		return NextFrame(menu, unk1, unk2);
 	}
