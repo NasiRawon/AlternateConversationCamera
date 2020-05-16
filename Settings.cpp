@@ -13,6 +13,7 @@ bool	Settings::bHeadTracking = true;
 bool	Settings::bConversationHT = true;
 bool	Settings::bLetterBox = true;
 bool	Settings::bHideDialogueMenu = true;
+bool	Settings::bEnableHUDMessagePositioning = true;
 int		Settings::uLetterBoxThickness = 175;
 int		Settings::uLetterBoxSpeed = 5;
 float	Settings::fCameraSpeed = 500.0f;
@@ -69,6 +70,7 @@ void Settings::Load()
 	Settings::bHeadTracking = GetPrivateProfileInt(L"Settings", L"bHeadTracking", 1, thisPath.c_str());
 	Settings::bConversationHT = GetPrivateProfileInt(L"Settings", L"bConversationHT", 1, thisPath.c_str());
 	Settings::bLetterBox = GetPrivateProfileInt(L"Settings", L"bLetterBox", 1, thisPath.c_str());
+	Settings::bEnableHUDMessagePositioning = GetPrivateProfileInt(L"Settings", L"bEnableHUDMessagePositioning", 1, thisPath.c_str());
 	Settings::uLetterBoxThickness = GetPrivateProfileInt(L"Settings", L"uLetterBoxThickness", 175, thisPath.c_str());
 	Settings::uLetterBoxSpeed = GetPrivateProfileInt(L"Settings", L"uLetterBoxSpeed", 5, thisPath.c_str());
 	Settings::fCameraSpeed = GetPrivateProfileInt(L"Settings", L"fCameraSpeed", 500, thisPath.c_str());

@@ -18,7 +18,8 @@ namespace Tralala
 
 	void HUDMenuNextFrame_Hook(HUDMenu* hudMenu)
 	{
-		if (!Settings::bLetterBox)
+		/* Ignore the whole shebang if feature isn't enabled in settings! */
+		if (!Settings::bEnableHUDMessagePositioning || !Settings::bLetterBox)
 			return;
 
 		GFxValue messagesBlock;
