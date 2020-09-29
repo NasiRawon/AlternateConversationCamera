@@ -2,6 +2,7 @@
 #include "ObjectRef.h"
 #include "skse64/NiNodes.h"
 
+
 namespace Tralala
 {
 	uintptr_t g_playerCameraAddr = 0;
@@ -15,6 +16,7 @@ namespace Tralala
 	uintptr_t g_processCamColAddr = 0;
 	uintptr_t g_getClosestPointAddr = 0;
 	uintptr_t g_camProcessColAddr = 0;
+
 
 	void PlayerCameraGetAddress()
 	{
@@ -42,14 +44,13 @@ namespace Tralala
 		g_camProcessColAddr = (uintptr_t)scan_memory_data(processColPattern, 0xBF, false, 0x1, 0x5);
 	}
 
+
 	float ThirdPersonState::GetDistanceWithinTargetHead(Actor * target)
 	{
-		if (!target || !target->processManager || !target->processManager->middleProcess)
-			return FLT_MAX;
+		if (!target || !target->processManager || !target->processManager->middleProcess) return FLT_MAX;
 
 		NiNode* headNode = (NiNode*)target->processManager->middleProcess->unk158;
-		if (!headNode)
-			return FLT_MAX;
+		if (!headNode) return FLT_MAX;
 
 		NiPoint3 dist;
 		dist.x = camPos.x - headNode->m_worldTransform.pos.x;
@@ -58,6 +59,7 @@ namespace Tralala
 
 		return (dist.x*dist.x + dist.y*dist.y + dist.z*dist.z);
 	}
+
 
 	void ThirdPersonState::SetFirstPersonSmooth(float minZoom, bool overShoulder)
 	{
@@ -72,9 +74,9 @@ namespace Tralala
 			curPosY = dstPosY;
 		}
 
-		if (!overShoulder)
-			fOverShoulderPosX = fOverShoulderCombatAddY = fOverShoulderPosZ = 0.0f;
+		if (!overShoulder) fOverShoulderPosX = fOverShoulderCombatAddY = fOverShoulderPosZ = 0.0f;
 	}
+
 
 	void ThirdPersonState::SetShoulderPos(const NiPoint3& pos)
 	{
@@ -83,21 +85,22 @@ namespace Tralala
 		this->fOverShoulderCombatAddY = pos.y;
 	}
 
+
 	void ThirdPersonState::ProcessCameraCollision()
 	{
 		typedef void(*ProcessCamCol_t)(ThirdPersonState*);
 		ProcessCamCol_t ProcessCamCol = (ProcessCamCol_t)g_processCamColAddr;
-
 		ProcessCamCol(this);
 	}
+
 
 	void TESCamera::SetCameraState(TESCameraState * camState)
 	{
 		typedef UInt32(*SetCameraState_t)(TESCamera* camera, TESCameraState* cameraState);
 		SetCameraState_t SetCameraState = (SetCameraState_t)g_setCameraStateAddr;
-
 		SetCameraState(this, camState);
 	}
+
 
 	NiCamera* TESCamera::GetNiCamera()
 	{
@@ -106,33 +109,35 @@ namespace Tralala
 		for (std::size_t i = 0; i < size; ++i)
 		{
 			NiAVObject* pObj = cameraNode->m_children.m_data[i];
-			if (!pObj)
-				continue;
+			if (!pObj) continue;
 
 			if (strcmp(pObj->GetRTTI()->name, "NiCamera") == 0) 
 			{
 				camera = (NiCamera*)pObj;
 				break;
 			}
-
 		}
 		return camera;
 	}
+
 
 	PlayerCamera * PlayerCamera::GetSingleton()
 	{
 		return *(PlayerCamera**)g_playerCameraAddr;
 	}
 
+
 	bool PlayerCamera::IsCameraFirstPerson()
 	{
 		return cameraState == cameraStates[kCameraState_FirstPerson];
 	}
 
+
 	bool PlayerCamera::IsCameraThirdPerson()
 	{
 		return cameraState == cameraStates[kCameraState_ThirdPerson2];
 	}
+
 
 	TESCameraState * PlayerCamera::ProcessCameraTransition(UInt32 srcCamState, UInt32 dstCamState, bool face2face)
 	{
@@ -143,7 +148,6 @@ namespace Tralala
 		{
 			typedef SInt32(*PushTargetCamState_t)(Data40 * data40, TESCameraState * camState);
 			PushTargetCamState_t PushTargetCamState = (PushTargetCamState_t)g_pushTargetCamAddr;
-
 			PushTargetCamState(&unk40, target);
 		}
 		else
@@ -167,57 +171,54 @@ namespace Tralala
 		return target;
 	}
 
+
 	void PlayerCamera::SetCameraTarget(Actor* target)
 	{
 		typedef void(*SetCameraTarget_t)(PlayerCamera* camera, Actor* target);
 		SetCameraTarget_t SetCameraTarget = (SetCameraTarget_t)g_setCamTargetAddr;
-
 		SetCameraTarget(this, target);
 	}
+
 
 	void PlayerCamera::ForceFirstPerson()
 	{
 		typedef void(*ForceFirstPerson_t)(PlayerCamera * camera);
 		ForceFirstPerson_t ForceFirstPerson = (ForceFirstPerson_t)g_forceFirstPersonAddr;
-
 		ThirdPersonState* tps = GetThirdPersonCamera();
 		tps->savedZoom = tps->curPosY;
-
 		ForceFirstPerson(this);
 	}
+
 
 	void PlayerCamera::ForceThirdPerson()
 	{
 		ThirdPersonState * tps = GetThirdPersonCamera();
-
 		tps->basePosX = tps->fOverShoulderPosX;
 		tps->basePosY = tps->fOverShoulderCombatAddY;
 		tps->basePosZ = tps->fOverShoulderPosZ;
 		tps->dstPosY = tps->savedZoom;
-
 		SetCameraState(tps);
 	}
+
 
 	void PlayerCamera::UpdateThirdPersonMode(bool weaponDrawn)
 	{
 		typedef void(*UpdateThirdPersonMode_t)(PlayerCamera * camera, bool weaponDrawn);
 		UpdateThirdPersonMode_t UpdateThirdPersonMode = (UpdateThirdPersonMode_t)g_updateThirdPersonAddr;
-
 		UpdateThirdPersonMode(this, weaponDrawn);
 	}
+
 
 	bool PlayerCamera::GetDistanceWithTargetBone(Actor * target, NiPoint3 * dist)
 	{
 		NiPoint3 targetPos;
-
 		target->GetTargetNeckPosition(&targetPos);
-
 		dist->x = targetPos.x - cameraPos.x;
 		dist->y = targetPos.y - cameraPos.y;
 		dist->z = targetPos.z - cameraPos.z;
-
 		return true;
 	}
+
 
 	float PlayerCamera::GetDistanceWithTargetBone(Actor * target, bool firstPerson)
 	{
@@ -256,54 +257,47 @@ namespace Tralala
 		return sqrt(dx*dx + dy*dy + dz*dz);
 	}
 
-	bool PlayerCamera::GetPenetration(Actor * target, NiPoint3* sourcePos, float radiusToCheck, 
-		float offsetActorFromGround)
+
+	bool PlayerCamera::GetPenetration(Actor * target, NiPoint3* sourcePos, float radiusToCheck, float offsetActorFromGround)
 	{
 		typedef bool(*GetPenetration_t)(SimpleShapePhantom*, Actor *, NiPoint3*, float, float);
 		GetPenetration_t GetPenetration = (GetPenetration_t)g_getPenetrationAddr;
-
 		return GetPenetration(simpleShapePhantoms, target, sourcePos, radiusToCheck, offsetActorFromGround);
 	}
+
 
 	bool PlayerCamera::GetClosestPoint(void* bhkWorldM, NiPoint3* sourcePos, NiPoint3* resultPos,
 		Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck)
 	{
-		typedef bool(*GetClosestPoint_t)(SimpleShapePhantom*, void*, NiPoint3*, 
-			NiPoint3*, Havok::hkpRootCdPoint*, Actor**, float);
+		typedef bool(*GetClosestPoint_t)(SimpleShapePhantom*, void*, NiPoint3*, NiPoint3*, Havok::hkpRootCdPoint*, Actor**, float);
 		GetClosestPoint_t GetClosestPoint = (GetClosestPoint_t)g_getClosestPointAddr;
-
-		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos, 
-			resultInfo, resultActor, radiusToCheck);
+		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos, resultInfo, resultActor, radiusToCheck);
 	}
+
 
 	bool PlayerCamera::ProcessCollision(NiPoint3* camPos, bool isFade)
 	{
 		typedef bool(*ProcessCollision_t)(PlayerCamera*, NiPoint3*, bool);
 		ProcessCollision_t ProcessCollision = (ProcessCollision_t)g_camProcessColAddr;
-
 		return ProcessCollision(this, camPos, isFade);
 	}
+
 
 	bool PlayerCamera::IsInCameraView(NiPoint3* pos, int mode)
 	{
 		NiCamera* niCamera = GetNiCamera();
-		if (!niCamera)
-			return false;
+		if (!niCamera) return false;
 	
 		// project a world space point to screen space
-		float w = pos->x * niCamera->m_aafWorldToCam[3][0] +
-			pos->y * niCamera->m_aafWorldToCam[3][1] + pos->z * niCamera->m_aafWorldToCam[3][2] +
-			niCamera->m_aafWorldToCam[3][3];
+		float w = pos->x * niCamera->m_aafWorldToCam[3][0] + pos->y * niCamera->m_aafWorldToCam[3][1] + pos->z * niCamera->m_aafWorldToCam[3][2] + niCamera->m_aafWorldToCam[3][3];
 
 		// Check to see if we're on the appropriate side of the camera.
 		if (w > 1e-5f)
 		{
 			float invW = 1.0f / w;
 
-			float screenX = pos->x * niCamera->m_aafWorldToCam[0][0] + pos->y * niCamera->m_aafWorldToCam[0][1] +
-				pos->z * niCamera->m_aafWorldToCam[0][2] + niCamera->m_aafWorldToCam[0][3];
-			float screenY = pos->x * niCamera->m_aafWorldToCam[1][0] + pos->y * niCamera->m_aafWorldToCam[1][1] +
-				pos->z * niCamera->m_aafWorldToCam[1][2] + niCamera->m_aafWorldToCam[1][3];
+			float screenX = pos->x * niCamera->m_aafWorldToCam[0][0] + pos->y * niCamera->m_aafWorldToCam[0][1] + pos->z * niCamera->m_aafWorldToCam[0][2] + niCamera->m_aafWorldToCam[0][3];
+			float screenY = pos->x * niCamera->m_aafWorldToCam[1][0] + pos->y * niCamera->m_aafWorldToCam[1][1] + pos->z * niCamera->m_aafWorldToCam[1][2] + niCamera->m_aafWorldToCam[1][3];
 
 			screenX *= invW;
 			screenY *= invW;
@@ -317,39 +311,35 @@ namespace Tralala
 			// If on screen return true. Otherwise, we fall through to false.
 			switch (mode)
 			{
-			case kRotate_Fast:
-			{
-				if (screenX >= 0.3125f && screenX <= 0.6875f &&
-					screenY >= 0.28125f && screenY <= 0.71785f)
+				case kRotate_Fast:
 				{
-					return true;
+					if (screenX >= 0.3125f && screenX <= 0.6875f && screenY >= 0.28125f && screenY <= 0.71785f)
+					{
+						return true;
+					}
+					break;
 				}
-				break;
-			}
-			case kRotate_Slow:
-			{
-				if (screenX >= 0.375f && screenX <= 0.625f &&
-					screenY >= 0.34375f && screenY <= 0.65625f)
+				case kRotate_Slow:
 				{
-					return true;
+					if (screenX >= 0.375f && screenX <= 0.625f && screenY >= 0.34375f && screenY <= 0.65625f)
+					{
+						return true;
+					}
+					break;
 				}
-				break;
-			}
-			case KRotate_Stop:
-			{
-				if (screenX >= 0.4375f && screenX <= 0.5625f &&
-					screenY >= 0.40625f && screenY <= 0.59375f)
+				case KRotate_Stop:
 				{
-					return true;
+					if (screenX >= 0.4375f && screenX <= 0.5625f && screenY >= 0.40625f && screenY <= 0.59375f)
+					{
+						return true;
+					}
+					break;
 				}
-				break;
-			}
-			default:
-				return false;
+				default:
+					return false;
 			}
 		}
 
 		return false;
-		
 	}
 }

@@ -4,6 +4,7 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
+
 bool	Settings::bLockOn = true;
 bool	Settings::bForceFirstPerson = true;
 bool	Settings::bSmoothTransition = true;
@@ -34,18 +35,19 @@ float	Settings::fCreatureCamOffsetZ = 15.0f;
 
 std::wstring thisPath = L"";
 
+
 void Settings::Load()
 {
 	TCHAR path[MAX_PATH];
 	HMODULE hm;
-	if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-		L"AlternateConversationCamera.dll", &hm))
+	if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, L"AlternateConversationCamera.dll", &hm))
 	{
 		GetModuleFileName(hm, path, MAX_PATH);
 		PathRemoveFileSpec(path);
 		thisPath = std::wstring(path);
-		if (!thisPath.empty() && thisPath.at(thisPath.length() - 1) != '\\'){
+
+		if (!thisPath.empty() && thisPath.at(thisPath.length() - 1) != '\\')
+		{
 			thisPath += L"\\AlternateConversationCamera.ini";
 		}
 	}
@@ -78,13 +80,12 @@ void Settings::Load()
 	Settings::f3rdZoom = GetPrivateProfileInt(L"Settings", L"u3rdZoom", 75, thisPath.c_str());
 	Settings::fDragonZoom = GetPrivateProfileInt(L"Settings", L"uDragonZoom", 125, thisPath.c_str());
 	Settings::bHideDialogueMenu = GetPrivateProfileInt(L"Settings", L"bHideDialogueMenu", 1, thisPath.c_str());
+
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosX", L"50", posX, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosZ", L"-5", posZ, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iAddOverShoulderPosY", L"0", posY, 8, thisPath.c_str());
-
 	GetPrivateProfileString(L"Settings", L"iMessagePosX", L"-601", mesPosX, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iMessagePosY", L"-400", mesPosY, 8, thisPath.c_str());
-
 	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetX", L"0", humanCamX, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetY", L"0", humanCamY, 8, thisPath.c_str());
 	GetPrivateProfileString(L"Settings", L"iHumanCamOffsetZ", L"5", humanCamZ, 8, thisPath.c_str());

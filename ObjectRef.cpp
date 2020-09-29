@@ -1,6 +1,7 @@
 #include "ObjectRef.h"
 #include "skse64/NiNodes.h"
 
+
 namespace Tralala
 {
 	uintptr_t g_playerCharacterAddr = 0;
@@ -22,6 +23,7 @@ namespace Tralala
 	uintptr_t g_getbhkWorldMAddr = 0;
 	uintptr_t g_unk_0x5ECF90Addr = 0;
 	uintptr_t g_isInAirAddr = 0;
+
 
 	void ObjectRefGetAddresses()
 	{
@@ -82,69 +84,70 @@ namespace Tralala
 		g_isInAirAddr = (uintptr_t)scan_memory_data(airpattern, 0x9B, false, 0x1, 0x5);
 	}
 
+
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
 	{
 		typedef void(*SetTargetLocation_t)(ActorProcessManager*, TESObjectREFR*, NiPoint3*);
 		SetTargetLocation_t SetTargetLocation = (SetTargetLocation_t)g_setTargetLocAddr;
-
 		SetTargetLocation(this, source, location);
 	}
+
 
 	void ActorProcessManager::SetDialogueHeadTrackingTarget(TESObjectREFR* target)
 	{
 		typedef void(*SetDialogueHTTarget_t)(ActorProcessManager*, TESObjectREFR*);
 		SetDialogueHTTarget_t SetTarget = (SetDialogueHTTarget_t)g_setDialogueAddr;
-
 		SetTarget(this, target);
 	}
+
 
 	void ActorProcessManager::ClearHeadTracking()
 	{
 		typedef void(*ClearHeadTracking_t)(ActorProcessManager*);
 		ClearHeadTracking_t ClearHeadTracking = (ClearHeadTracking_t)g_clearHeadTrackAddr;
-
 		ClearHeadTracking(this);
 	}
+
 
 	UInt32* ActorProcessManager::GetFurnitureHandle(UInt32* handle)
 	{
 		typedef UInt32* (*GetFurnitureHandle_t)(ActorProcessManager*, UInt32*);
 		GetFurnitureHandle_t GetFurnitureHandle = (GetFurnitureHandle_t)g_getFurnHandleAddr;
-
 		return GetFurnitureHandle(this, handle);
 	}
+
 
 	bool IAnimationGraphManagerHolder::SetAnimationVariableBool(const BSFixedString& variableName, bool value)
 	{
 		typedef bool(*SetAnimVarBool_t)(IAnimationGraphManagerHolder*, const BSFixedString&, bool);
 		SetAnimVarBool_t SetAnimVarBool = (SetAnimVarBool_t)g_setAnimBoolAddr;
-
 		return SetAnimVarBool(this, variableName, value);
 	}
+
 
 	UInt32 InvalidRefHandle()
 	{
 		return *(UInt32*)g_invalidRefHandleAddr;
 	}
 
+
 	bool LookupRefByHandle(UInt32& refHandle, NiPointer<TESObjectREFR>& refrOut)
 	{
 		typedef bool(*LookupREFRByHandle_t)(UInt32 &, NiPointer<TESObjectREFR> &);
 		LookupREFRByHandle_t LookupREFRByHandle = (LookupREFRByHandle_t)g_lookupAddr;
-
 		return LookupREFRByHandle(refHandle, refrOut);
 	}
+
 
 	float TESObjectREFR::GetDistance(TESObjectREFR * target)
 	{
 		float x, y, z;
-
 		x = pos.x - target->pos.x;
 		y = pos.y - target->pos.y;
 		z = pos.z - target->pos.z;
-
 		return sqrt(x*x + y*y + z*z);
 	}
+
 
 	float TESObjectREFR::GetTargetHeight()
 	{
@@ -152,20 +155,20 @@ namespace Tralala
 		return GetBoundRightBackTop(&p1)->z - GetBoundLeftFrontBottom(&p2)->z;
 	}
 
+
 	float TESObjectREFR::GetTargetWidth()
 	{	
 		NiPoint3 p1, p2;
 		return GetBoundRightBackTop(&p1)->x - GetBoundLeftFrontBottom(&p2)->x;
 	}
 
+
 	void* TESObjectREFR::GetbhkWorldM()
 	{
-		if (!parentCell)
-			return nullptr;
+		if (!parentCell) return nullptr;
 
 		typedef void* (*GetbhkWorldM_t)(TESObjectCELL*);
 		GetbhkWorldM_t GetbhkWorldM = (GetbhkWorldM_t)g_getbhkWorldMAddr;
-
 		return GetbhkWorldM(parentCell);
 	}
 
@@ -174,118 +177,111 @@ namespace Tralala
 		handleRefObject.IncRef();
 	}
 
+
 	void TESObjectREFR::DecRef()
 	{
 		handleRefObject.DecRef();
 	}
 
+
 	bool Actor::IsOnMount()
 	{
 		typedef bool(*IsOnMount_t)(Actor*);
 		IsOnMount_t IsOnMount = (IsOnMount_t)g_isonmountAddr;
-
 		return IsOnMount(this);
 	}
+
 
 	bool Actor::IsOnCarriage()
 	{
 		UInt32 handle = 0;
 		processManager->GetFurnitureHandle(&handle);
-
 		UInt32 sitState = actorState.GetSitState();
-		if ((sitState == ActorState::kSitState_Sitting) && (handle == InvalidRefHandle()))
-			return true;
-
+		if ((sitState == ActorState::kSitState_Sitting) && (handle == InvalidRefHandle())) return true;
 		return false;
 	}
+
 
 	bool Actor::IsTalking()
 	{
-		if ((flags1 & 0x180) != 0x180)
-			return true;
-
-		if (unk108 > 0)
-			return true;
-
+		if ((flags1 & 0x180) != 0x180) return true;
+		if (unk108 > 0) return true;
 		return false;
 	}
+
 
 	bool Actor::IsInAir()
 	{
 		typedef bool(*IsInAir_t)(Actor*);
 		IsInAir_t IsInAir = (IsInAir_t)g_isInAirAddr;
-
 		return IsInAir(this);
 	}
+
 
 	void Actor::SetAngleX(float angle)
 	{
 		typedef void(*SetAngleX_t)(Actor * actor, float angle);
 		SetAngleX_t SetAngleX = (SetAngleX_t)g_setAngleXAddr;
-
 		SetAngleX(this, angle);
 	}
 	
+
 	void Actor::SetAngleZ(float angle)
 	{
 		typedef void(*SetAngleZ_t)(Actor * actor, float angle);
 		SetAngleZ_t SetAngleZ = (SetAngleZ_t)g_setAngleZAddr;
-
 		SetAngleZ(this, angle);
 	}
+
 
 	void Actor::GetTargetNeckPosition(NiPoint3 * pos)
 	{
 		NiAVObject* node = this->GetNiNode();
-		if (!node)
-			return GetMarkerPosition(pos);
+		if (!node) return GetMarkerPosition(pos);
 		
 		BSFixedString neckName("NPC Neck [Neck]");
 		node = node->GetObjectByName(&neckName.data);
-		if (!node)
-			return GetMarkerPosition(pos);
+		if (!node) return GetMarkerPosition(pos);
 
 		pos->x = node->m_worldTransform.pos.x;
 		pos->y = node->m_worldTransform.pos.y;
 		pos->z = node->m_worldTransform.pos.z;
 	}
 
+
 	TESObjectWEAP* Actor::GetEquippedWeapon(bool isLeftHand)
 	{
 		typedef TESObjectWEAP * (*GetEquippedWeapon_t)(Actor * actor, bool isLeftHand);
 		GetEquippedWeapon_t GetEquippedWeapon = (GetEquippedWeapon_t)g_equipWeaponAddr;
-
 		return GetEquippedWeapon(this, isLeftHand);
 	}
+
 
 	bool Actor::IsFlyingActor()
 	{
 		return ((race->data.raceFlags & TESRace::kRace_Flies) == TESRace::kRace_Flies);
 	}
 
+
 	bool Actor::IsNotInFurniture()
 	{
 		return ((actorState.flags08 & 0x0003C000) == 0);
 	}
 
+
 	bool Actor::IsCasting(MagicItem* spell)
 	{
 		typedef bool(*IsCasting_t)(Actor*, MagicItem*);
 		IsCasting_t IsCasting = (IsCasting_t)g_isCastingAddr;
-
 		return IsCasting(this, spell);
 	}
 
+
 	bool Actor::GetTargetHeadNodePosition(NiPoint3 * pos, bool * compare)
 	{
-		if (!processManager)
-			return false;
-
-		if (!processManager->middleProcess)
-			return false;
-
-		if (!processManager->middleProcess->unk158)
-			return false;
+		if (!processManager) return false;
+		if (!processManager->middleProcess) return false;
+		if (!processManager->middleProcess->unk158) return false;
 
 		NiNode* headNode = (NiNode*)processManager->middleProcess->unk158;
 
@@ -293,77 +289,72 @@ namespace Tralala
 		{
 			BSFixedString headName("NPC Head [Head]");
 			BSFixedString name(headNode->m_name);
-			if (name == headName)
-				*compare = true;
-			else
-				*compare = false;
+			if (name == headName) *compare = true;
+			else *compare = false;
 		}
 
 		pos->x = headNode->m_worldTransform.pos.x;
 		pos->y = headNode->m_worldTransform.pos.y;
 		pos->z = headNode->m_worldTransform.pos.z;
 
-		
-
 		return true;
 	}
-	
+
+
 	bool Actor::IsSneaking()
 	{
 		typedef bool(*IsSneaking_t)(Actor*);
 		IsSneaking_t IsSneaking = (IsSneaking_t)g_isSneakingAddr;
-
 		return IsSneaking(this);
 	}
+
 
 	float Actor::GetSneakingHeight(bool isCamera)
 	{
 		typedef float(*GetSneakingHeight_t)(Actor*, bool);
 		GetSneakingHeight_t GetSneakingHeight = (GetSneakingHeight_t)g_sneakingHeightAddr;
-
 		return GetSneakingHeight(this, isCamera);
 	}
+
 
 	float Actor::GetCameraHeight()
 	{
 		typedef float(*GetCameraHeight_t)(Actor*);
 		GetCameraHeight_t GetCameraHeight = (GetCameraHeight_t)g_cameraHeightAddr;
-
 		return GetCameraHeight(this);
 	}
+
 
 	void Actor::Unk_0x5ECF90()
 	{
 		typedef void(*Unk_0x5ECF90_t)(Actor*);
 		Unk_0x5ECF90_t Unk_0x5ECF90 = (Unk_0x5ECF90_t)g_unk_0x5ECF90Addr;
-
 		return Unk_0x5ECF90(this);
 	}
+
 
 	PlayerCharacter * PlayerCharacter::GetSingleton()
 	{
 		return *(PlayerCharacter**)g_playerCharacterAddr;
 	}
 
+
 	bool PlayerCharacter::SetIsNPCAnimVar(bool var)
 	{
 		BSFixedString isNPCVar("IsNPC");
 		bool ret = false;
 
-		if (this)
-			ret = this->animGraphHolder.SetAnimationVariableBool(isNPCVar, var);
-		
+		if (this) ret = this->animGraphHolder.SetAnimationVariableBool(isNPCVar, var);
 		return ret;
 	}
+
 
 	bool PlayerCharacter::GetIsNPCAnimVar()
 	{
 		BSFixedString isNPCVar("IsNPC");
 		bool ret = false;
 
-		if (this)
-			this->animGraphHolder.GetAnimationVariableBool(isNPCVar, ret);
-
+		if (this) this->animGraphHolder.GetAnimationVariableBool(isNPCVar, ret);
 		return ret;
 	}
 }

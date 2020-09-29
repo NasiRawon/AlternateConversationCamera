@@ -1,10 +1,12 @@
 #include "Controls.h"
 #include "PatternScanner.h"
 
+
 namespace Tralala
 {
 	uintptr_t g_playerControlsAddr = 0;
 	uintptr_t g_menuControlsAddr = 0;
+
 
 	void ControlsGetAddresses()
 	{
@@ -15,10 +17,12 @@ namespace Tralala
 		g_menuControlsAddr = (uintptr_t)scan_memory_data(menupattern, 0x27, false, 0x3, 0x7);
 	}
 
+
 	MenuControls * MenuControls::GetSingleton()
 	{
 		return *(MenuControls**)g_menuControlsAddr;
 	}
+
 
 	PlayerControls* PlayerControls::GetSingleton()
 	{

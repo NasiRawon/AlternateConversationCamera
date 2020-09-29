@@ -5,6 +5,7 @@
 #include "Settings.h"
 #include "PatternScanner.h"
 
+
 uintptr_t g_hudMenuNextFrameAddr = 0;
 uintptr_t g_barterMenuDtorAddr = 0;
 uintptr_t g_trainingMenuCtorAddr = 0;
@@ -12,9 +13,11 @@ uintptr_t g_trainingMenuDtorAddr = 0;
 uintptr_t g_dialMenuVtblAddr = 0;
 uintptr_t g_dialNextFrameAddr = 0;
 
+
 namespace Tralala
 {
 	bool g_isTrainingMenu = false;
+
 
 	void HUDMenuNextFrame_Hook(HUDMenu* hudMenu)
 	{
@@ -71,21 +74,25 @@ namespace Tralala
 		}
 	}
 
+
 	void BarterMenuDtor_Hook()
 	{
 		UInt32 invalidHandle = InvalidRefHandle();
 		*(UInt32*)g_barterHandle = invalidHandle;
 	}
 
+
 	void TrainingMenuCtor_Hook()
 	{
 		g_isTrainingMenu = true;
 	}
 
+
 	void TrainingMenuDtor_Hook()
 	{
 		g_isTrainingMenu = false;
 	}
+
 
 	void DialMenuNextFrame_Hook(IMenu* menu, float unk1, UInt32 unk2)
 	{
@@ -164,11 +171,13 @@ namespace Tralala
 	}
 }
 
+
 #include "skse64_common/Utilities.h"
 #include "skse64_common/Relocation.h"
 #include "skse64_common/BranchTrampoline.h"
 #include "skse64_common/SafeWrite.h"
 #include "xbyak/xbyak.h"
+
 
 namespace Menus
 {
@@ -192,10 +201,12 @@ namespace Menus
 		g_dialNextFrameAddr = (uintptr_t)((void**)g_dialMenuVtblAddr)[5];
 	}
 
+
 	bool InstallHook()
 	{
 		{
-			struct InstallHookHUDNextFrameCode : Xbyak::CodeGenerator {
+			struct InstallHookHUDNextFrameCode : Xbyak::CodeGenerator
+			{
 				InstallHookHUDNextFrameCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
@@ -240,7 +251,8 @@ namespace Menus
 		}
 
 		{
-			struct InstallHookBarterDtorCode : Xbyak::CodeGenerator {
+			struct InstallHookBarterDtorCode : Xbyak::CodeGenerator
+			{
 				InstallHookBarterDtorCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
@@ -282,7 +294,8 @@ namespace Menus
 		}
 
 		{
-			struct InstallHookTrainCtorCode : Xbyak::CodeGenerator {
+			struct InstallHookTrainCtorCode : Xbyak::CodeGenerator
+			{
 				InstallHookTrainCtorCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
@@ -319,13 +332,13 @@ namespace Menus
 			InstallHookTrainCtorCode code(codeBuf, GetFnAddr(Tralala::TrainingMenuCtor_Hook));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
-
 			if (!g_branchTrampoline.Write5Branch(g_trainingMenuCtorAddr, uintptr_t(code.getCode())))
 				return false;
 		}
 
 		{
-			struct InstallHookTrainDtorCode : Xbyak::CodeGenerator {
+			struct InstallHookTrainDtorCode : Xbyak::CodeGenerator
+			{
 				InstallHookTrainDtorCode(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;

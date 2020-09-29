@@ -8,11 +8,13 @@
 
 #pragma comment(lib, "d3dcompiler.lib")
 
+
 uintptr_t g_unkStructAddr = 0;
 uintptr_t g_presentAddr = 0;
 uintptr_t g_swapChainAddr = 0;
 uintptr_t g_menuRenderAddr = 0;
 uintptr_t g_cleanAddr = 0;
+
 
 namespace Tralala
 {
@@ -29,6 +31,7 @@ namespace Tralala
 	ID3D10Blob* pBlob = nullptr;
 
 	D3D11_VIEWPORT pViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{ 0 };
+
 
 	struct ConstantBuffer
 	{
@@ -81,6 +84,7 @@ namespace Tralala
 		_MESSAGE("Done.");
 	}
 
+
 	static HRESULT GetDeviceAndCtxFromSwapchain(IDXGISwapChain* pSwapChain, ID3D11Device** ppDevice, ID3D11DeviceContext** ppContext)
 	{
 		HRESULT ret = pSwapChain->GetDevice(__uuidof(ID3D11Device), (PVOID*)ppDevice);
@@ -92,6 +96,7 @@ namespace Tralala
 
 		return ret;
 	}
+
 
 	static bool CompileShader(const char* szShader, const char* szEntrypoint, const char* szTarget, ID3D10Blob** pBlob)
 	{
@@ -111,6 +116,7 @@ namespace Tralala
 		}
 		return true;
 	}
+
 
 #if 1
 	static void DrawLetterBox(ID3D11DeviceContext* context, UINT numVertices, float dstPosY)
@@ -155,7 +161,8 @@ namespace Tralala
 		static float speed = 0.005f;
 #endif
 
-		if (!g_bInitialised) {
+		if (!g_bInitialised)
+		{
 			if (FAILED(GetDeviceAndCtxFromSwapchain(pSwapChain, &pDevice, &pContext)))
 			{
 				CleanupD3D11();
@@ -344,11 +351,13 @@ namespace Tralala
 #endif
 }
 
+
 #include "skse64_common/Utilities.h"
 #include "skse64_common/Relocation.h"
 #include "skse64_common/BranchTrampoline.h"
 #include "skse64_common/SafeWrite.h"
 #include "xbyak/xbyak.h"
+
 
 namespace Graphics
 {
@@ -370,10 +379,12 @@ namespace Graphics
 #endif
 	}
 
+
 	bool InstallHook()
 	{
 		{
-			struct InstallHookPresent_Code : Xbyak::CodeGenerator {
+			struct InstallHookPresent_Code : Xbyak::CodeGenerator
+			{
 				InstallHookPresent_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
@@ -414,7 +425,8 @@ namespace Graphics
 		}
 
 		{
-			struct InstallHookDtor_Code : Xbyak::CodeGenerator {
+			struct InstallHookDtor_Code : Xbyak::CodeGenerator
+			{
 				InstallHookDtor_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
@@ -457,4 +469,3 @@ namespace Graphics
 		return true;
 	}
 }
-

@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "PatternScanner.h"
 
+
 namespace Tralala
 {
 	uintptr_t g_MenuTopicManagerAddr = 0;
@@ -15,6 +16,7 @@ namespace Tralala
 	uintptr_t g_isDialogueMenuCloseAddr = 0;
 	uintptr_t g_containerHandle = 0;
 	uintptr_t g_barterHandle = 0;
+
 
 	void UtilsGetAddresses()
 	{
@@ -50,61 +52,59 @@ namespace Tralala
 
 		const std::array<BYTE, 7> bartpattern = { 0x4C, 0x8B, 0xEF, 0x48, 0x8B, 0x43, 0x28 };
 		g_barterHandle = (uintptr_t)scan_memory_data(bartpattern, 0x33, false, 0x3, 0x7);
-
 	}
+
 
 	TESCameraController* TESCameraController::GetSingleton()
 	{
 		return (TESCameraController*)g_TESCameraControllerAddr;
 	}
 
+
 	MenuTopicManager * MenuTopicManager::GetSingleton()
 	{
 		return *(MenuTopicManager**)g_MenuTopicManagerAddr;
 	}
 
+
 	NiPointer<TESObjectREFR> MenuTopicManager::GetDialogueTarget()
 	{
 		NiPointer<TESObjectREFR> refr;
-		if (talkingHandle != Tralala::InvalidRefHandle())
-			LookupRefByHandle(talkingHandle, refr);
-
+		if (talkingHandle != Tralala::InvalidRefHandle()) LookupRefByHandle(talkingHandle, refr);
 		if (!refr)
 		{
-			if (handle2 != Tralala::InvalidRefHandle())
-				LookupRefByHandle(handle2, refr);
+			if (handle2 != Tralala::InvalidRefHandle()) LookupRefByHandle(handle2, refr);
 		}
-
 		return refr;
 	}
+
 
 	StringCache::Ref::Ref()
 	{
 		typedef StringCache::Ref*(*ctor_t)(StringCache::Ref *, const char *);
 		ctor_t ctor = (ctor_t)g_bsfixedstringCtorAddr;
-
 		ctor(this, "");
 	}
+
 
 	StringCache::Ref::Ref(const char * buf)
 	{
 		typedef StringCache::Ref*(*ctor_t)(StringCache::Ref *, const char *);
 		ctor_t ctor = (ctor_t)g_bsfixedstringCtorAddr;
-
 		ctor(this, buf);
 	}
+
 
 	StringCache::Ref::~Ref()
 	{
 		Release();
 	}
 
+
 	void StringCache::Ref::Release()
 	{
 		typedef void(*dtor_t)(StringCache::Ref*);
 		dtor_t dtor = (dtor_t)g_bsfixedstringDtorAddr;
-
 		dtor(this);
 	}
-
 }
