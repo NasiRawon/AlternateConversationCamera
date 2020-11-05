@@ -1165,7 +1165,10 @@ namespace Tralala
 				Havok::hkpRootCdPoint resultInfo;
 				Actor* resultActor = nullptr;
 
-				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
+				// Make sure the world is valid before testing - If an actor is deleted during a converstaion, the world
+				// can become null, causing a crash.
+				auto world = g_refTarget->GetbhkWorldM();
+				if (world && camera->GetClosestPoint(world, &targetHeadPos, &resultPos, &resultInfo,
 					&resultActor, 1.0f))
 				{
 	#if 0
