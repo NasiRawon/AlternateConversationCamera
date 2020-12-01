@@ -17,6 +17,7 @@
 
 #include <shlobj.h>
 
+
 IDebugLog				gLog;
 PluginHandle			g_pluginHandle = kPluginHandle_Invalid;
 
@@ -43,6 +44,7 @@ uintptr_t g_thirdCamHeightAddr = 0;
 uintptr_t g_thirdCamColAddr = 0;
 uintptr_t g_thirdCamUpdateAddr = 0;
 uintptr_t g_camCollisionAddr = 0;
+
 
 void MainGetAddresses()
 {
@@ -124,6 +126,7 @@ namespace Tralala
 
 	Actor* g_refTarget = nullptr;
 
+
 	static void SetZoom(float targetFOV)
 	{
 		float mult = roundf(1.0f / *(float*)g_deltaTimeAddr) / 60.0f;
@@ -135,6 +138,7 @@ namespace Tralala
 		g_fovStep = step;
 	}
 
+
 	static void ResetZoom()
 	{
 		float mult = roundf(1.0f / *(float*)g_deltaTimeAddr) / 60.0f;
@@ -145,6 +149,7 @@ namespace Tralala
 		g_firstfovTo = *(float*)g_defaultFirstFOVAddr;
 		g_fovStep = step;
 	}
+
 
 	static bool IsValidFaceToFace(PlayerCamera * camera, Actor** ret)
 	{
@@ -932,8 +937,7 @@ namespace Tralala
 	// TO DO - FIX THE FECKIN' CAMERA COLLISION
 	void TPCamProcessCollision_Hook(ThirdPersonState* tps)
 	{
-		if (!Settings::bSwitchTarget)
-			return tps->ProcessCameraCollision();
+		if (!Settings::bSwitchTarget) return tps->ProcessCameraCollision();
 
 		PlayerCharacter* player = PlayerCharacter::GetSingleton();
 		PlayerCamera* camera = (PlayerCamera*)tps->camera;
@@ -954,17 +958,14 @@ namespace Tralala
 				if (g_refTarget->movementCtrlNPC)
 				{
 					MovementControllerNPC* movementCtrl = g_refTarget->movementCtrlNPC;
-
 					BSFixedString intfc("IMovementSetGoal");
-
 					IMovementInterface* movementIntfc = movementCtrl->QueryMovementInterface(intfc);
+
 					if (movementIntfc)
 					{
 						IMovementSetGoal* setGoal = (IMovementSetGoal*)movementIntfc;
 						UInt32 unkVar = *(UInt32*)(setGoal + 0x6);
-
-						if(unkVar != 3)
-							setGoal->ClearPathingRequest();
+						if (unkVar != 3) setGoal->ClearPathingRequest();
 					}
 				}
 
@@ -973,7 +974,9 @@ namespace Tralala
 				NiPoint3 targetHeadPos;
 				bool targetHeadPosRet = false;
 				if (!player->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))
+				{
 					player->GetMarkerPosition(&targetHeadPos);
+				}
 
 				NiPoint3 headPos;
 				bool headPosRet = true;
@@ -1004,15 +1007,12 @@ namespace Tralala
 					}
 
 	#endif
-				
 					isPCCollided = true;
 				}
 
 				if (isPCCollided)
 				{
-					NiPoint3 offset(Settings::fHumanCamOffsetX, 
-						Settings::fHumanCamOffsetY, 
-						Settings::fHumanCamOffsetZ);
+					NiPoint3 offset(Settings::fHumanCamOffsetX, Settings::fHumanCamOffsetY, Settings::fHumanCamOffsetZ);
 					if (!headPosRet)
 					{
 						offset.x = Settings::fCreatureCamOffsetX;
@@ -1040,8 +1040,7 @@ namespace Tralala
 
 				if (!player->IsSneaking() && player->actorState.IsWeaponDrawn())
 				{
-					if (pcHeight <= 0.0f)
-						pcHeight = targetPos.z - player->pos.z;
+					if (pcHeight <= 0.0f) pcHeight = targetPos.z - player->pos.z;
 
 					targetPos.x = player->pos.x;
 					targetPos.y = player->pos.y;
@@ -1088,9 +1087,7 @@ namespace Tralala
 				if (abs(curDistance - distance) >= 10.0f)
 				{
 					float newFOV = roundf((atanf(Settings::f3rdZoom / distance) * 2.0f) * 180.0f / PI);
-					if (newFOV < 30.0f)
-						newFOV = 30.0f;
-
+					if (newFOV < 30.0f) newFOV = 30.0f;
 					SetZoom(newFOV);
 					curDistance = distance;
 				}
@@ -1113,21 +1110,18 @@ namespace Tralala
 					if (camera->IsInCameraView(&targetPos, PlayerCamera::KRotate_Stop))
 					{
 						constexpr float speed = 1.0f / 90.f;
-
 						diffAngleX = origDiffAngleX * speed * mult;
 						diffAngleZ = origDiffAngleZ * speed * mult;
 					}
 					else if (camera->IsInCameraView(&targetPos, PlayerCamera::kRotate_Slow))
 					{
 						constexpr float speed = 1.0f / 60.f;
-
 						diffAngleX = origDiffAngleX * speed * mult;
 						diffAngleZ = origDiffAngleZ * speed * mult;
 					}
 					else
 					{
 						constexpr float speed = 1.0f / 30.f;
-
 						diffAngleX = origDiffAngleX * speed * mult;
 						diffAngleZ = origDiffAngleZ * speed * mult;
 					}
@@ -1142,7 +1136,6 @@ namespace Tralala
 			}
 			else
 			{
-
 				NiPoint3 targetHeadPos;
 				bool targetHeadPosRet = true;
 				if (!g_refTarget->GetTargetHeadNodePosition(&targetHeadPos, &targetHeadPosRet))

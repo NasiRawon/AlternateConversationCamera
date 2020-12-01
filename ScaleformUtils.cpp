@@ -1,6 +1,7 @@
 #include "ScaleformUtils.h"
 #include "PatternScanner.h"
 
+
 namespace Tralala
 {
 	uintptr_t g_scaleFormHeapAddr = 0;
@@ -11,6 +12,7 @@ namespace Tralala
 	uintptr_t g_getMemberAddr = 0;
 	uintptr_t g_setMemberAddr = 0;
 	uintptr_t g_setTextAddr = 0;
+
 
 	void ScaleformUtilGetAddresses()
 	{
@@ -45,29 +47,33 @@ namespace Tralala
 		return *(ScaleformHeap * *)g_scaleFormHeapAddr;
 	}
 
+
 	void* ScaleformHeap_Allocate(UInt32 size)
 	{
 		return ScaleformHeap::GetSingleton()->Allocate(size);
 	}
+
 
 	void ScaleformHeap_Free(void* ptr)
 	{
 		return ScaleformHeap::GetSingleton()->Free(ptr);
 	}
 
+
 	GFxValue::~GFxValue()
 	{
 		CleanManaged();
 	}
+
 
 	void GFxValue::AddManaged()
 	{
 		typedef void(*AddManaged_Internal_t)(ObjectInterface*, GFxValue*, void*);
 		AddManaged_Internal_t AddManaged_Internal = (AddManaged_Internal_t)g_addManagedAddr;
 
-		if (IsManaged())
-			AddManaged_Internal(objectInterface, this, data.obj);
+		if (IsManaged()) AddManaged_Internal(objectInterface, this, data.obj);
 	}
+
 
 	void GFxValue::AddManaged(const GFxValue& src)
 	{
@@ -80,6 +86,7 @@ namespace Tralala
 			AddManaged_Internal(objectInterface, this, data.obj);
 		}
 	}
+
 
 	void GFxValue::CleanManaged()
 	{
@@ -95,45 +102,46 @@ namespace Tralala
 		}
 	}
 
+
 	bool GFxValue::GetDisplayInfo(DisplayInfo* displayInfo)
 	{
 		typedef bool(*GetDisplayInfo_t)(ObjectInterface*, void*, DisplayInfo*);
 		GetDisplayInfo_t GetDisplayInfo = (GetDisplayInfo_t)g_getDispInfoAddr;
-
 		return GetDisplayInfo(objectInterface, data.obj, displayInfo);
 	}
+
 
 	bool GFxValue::SetDisplayInfo(DisplayInfo* displayInfo)
 	{
 		typedef bool(*SetDisplayInfo_t)(ObjectInterface*, void*, DisplayInfo*);
 		SetDisplayInfo_t SetDisplayInfo = (SetDisplayInfo_t)g_setDispInfoAddr;
-
 		return SetDisplayInfo(objectInterface, data.obj, displayInfo);
 	}
+
 
 	bool GFxValue::GetMember(const char* name, GFxValue* value)
 	{
 		typedef bool(*GetMember_t)(ObjectInterface*, void*, const char*, GFxValue*, bool);
 		GetMember_t GetMember = (GetMember_t)g_getMemberAddr;
-
 		return GetMember(objectInterface, data.obj, name, value, IsDisplayObject());
 	}
+
 
 	bool GFxValue::SetMember(const char* name, GFxValue* value)
 	{
 		typedef bool(*SetMember_t)(ObjectInterface*, void*, const char*, GFxValue*, bool);
 		SetMember_t SetMember = (SetMember_t)g_setMemberAddr;
-
 		return SetMember(objectInterface, data.obj, name, value, IsDisplayObject());
 	}
+
 
 	bool GFxValue::SetText(const char* text, bool html)
 	{
 		typedef bool(*SetText_t)(ObjectInterface*, void*, const char*, bool);
 		SetText_t SetText = (SetText_t)g_setTextAddr;
-
 		return SetText(objectInterface, data.obj, text, html);
 	}
+
 
 	void GFxValue::SetString(const char* value)
 	{
@@ -143,6 +151,7 @@ namespace Tralala
 		data.string = value;
 	}
 
+
 	void GFxValue::SetNumber(double value)
 	{
 		CleanManaged();
@@ -151,14 +160,11 @@ namespace Tralala
 		data.number = value;
 	}
 
+
 	const char* GFxValue::GetString(void) const
 	{
-		if (GetType() != kType_String)
-			return NULL;
-
-		if (IsManaged())
-			return *data.managedString;
-		else
-			return data.string;
+		if (GetType() != kType_String) return NULL;
+		if (IsManaged()) return *data.managedString;
+		else return data.string;
 	}
 }

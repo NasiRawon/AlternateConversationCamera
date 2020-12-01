@@ -28,6 +28,6 @@ struct Settings
 	static bool		bConversationHT;
 	static bool		bLetterBox;
 	static bool		bHideDialogueMenu;
-
+	static bool		bEnableHUDMessagePositioning;
 	static void Load();
 };
