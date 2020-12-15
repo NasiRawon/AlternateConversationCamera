@@ -147,7 +147,7 @@ namespace Tralala
 		virtual void		Unk_7B(void);
 		virtual void		Unk_7C(void);
 		virtual void		Unk_7D(void);
-		//virtual ActorWeightModel	* GetWeightModel(UInt32 weightModel); // 0 Small 1 Large
+		virtual class ActorWeightModel	* GetWeightModel(UInt32 weightModel); // 0 Small 1 Large
 		virtual void		Unk_7F(void);
 		virtual void		Unk_80(void);
 		virtual void		Unk_81(void);
