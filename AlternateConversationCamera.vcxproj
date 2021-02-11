@@ -176,6 +176,7 @@
     <ClInclude Include="Menus.h" />
     <ClInclude Include="ObjectRef.h" />
     <ClInclude Include="PatternScanner.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ScaleformUtils.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
@@ -194,6 +195,9 @@
     <ProjectReference Include="skse64_common\skse64_common.vcxproj">
       <Project>{5fd1c08d-db80-480c-a1c6-f0920005cd13}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AlternateConversationCamera.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
