@@ -43,7 +43,7 @@ namespace Tralala
 				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 				if (!mtm)
 					return;
-				
+
 				bool isDialogueMenuClose = *(bool*)g_isDialogueMenuCloseAddr;
 
 				UInt32 containerHandle = *(UInt32*)g_containerHandle;
@@ -92,7 +92,7 @@ namespace Tralala
 		NextFrame_t NextFrame = (NextFrame_t)g_dialNextFrameAddr;
 
 		GFxMovieView* view = (Tralala::GFxMovieView*)menu->view;
-		if(!view || !Settings::bHideDialogueMenu)
+		if (!view || !Settings::bHideDialogueMenu)
 			return NextFrame(menu, unk1, unk2);
 
 		GFxValue topicListHolder;
@@ -103,12 +103,12 @@ namespace Tralala
 
 			if (topicListHolder.GetDisplayInfo(&displayInfo))
 			{
-				
+
 				MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 
 				GFxValue greetingState(0);
 				GFxValue topicShownState(1);
-				GFxValue topicClickedState(2);		
+				GFxValue topicClickedState(2);
 				GFxValue curState;
 
 				if (!g_zoom)
@@ -132,7 +132,7 @@ namespace Tralala
 							view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicClickedState, 0);
 
 						displayInfo.SetVisible(false);
-					}		
+					}
 					else
 					{
 						view->SetVariable("_root.DialogueMenu_mc.eMenuState", &topicShownState, 0);
@@ -153,7 +153,7 @@ namespace Tralala
 							displayInfo.SetVisible(true);
 					}
 				}
-				
+
 				topicListHolder.SetDisplayInfo(&displayInfo);
 			}
 		}
@@ -173,20 +173,20 @@ namespace Menus
 {
 	void GetAddresses()
 	{
-		const std::array<BYTE, 9> hudpattern = { 0x90, 0x89, 0x1C, 0x2F, 0x48, 0x8B, 0x5C, 0x24, 0x68 };
-		g_hudMenuNextFrameAddr = (uintptr_t)scan_memory(hudpattern, 0x93, false);
+		const std::array<BYTE, 10> hudpattern = { 0xFF, 0x90, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x4E, 0x10 };
+		g_hudMenuNextFrameAddr = (uintptr_t)scan_memory(hudpattern, 0x2A, false);
 
 		const std::array<BYTE, 9> barterpattern = { 0x90, 0x48, 0x83, 0xBF, 0x80, 0x00, 0x00, 0x00, 0x00 };
-		g_barterMenuDtorAddr = (uintptr_t)scan_memory(barterpattern, 0x63, true);
+		g_barterMenuDtorAddr = (uintptr_t)scan_memory(barterpattern, 0x68, true);
 
 		const std::array<BYTE, 8> traincpattern = { 0x83, 0x4B, 0x1C, 0x04, 0xC6, 0x43, 0x18, 0x03 };
 		g_trainingMenuCtorAddr = (uintptr_t)scan_memory(traincpattern, 0x2C, true);
 
 		const std::array<BYTE, 8> traindpattern = { 0x48, 0x89, 0x6B, 0x48, 0x48, 0x8B, 0x4B, 0x38 };
-		g_trainingMenuDtorAddr = (uintptr_t)scan_memory(traindpattern, 0x37, true);
+		g_trainingMenuDtorAddr = (uintptr_t)scan_memory(traindpattern, 0x39, true);
 
 		const std::array<BYTE, 9> dialpattern = { 0x48, 0x8D, 0x5E, 0x38, 0x48, 0x89, 0x5C, 0x24, 0x58 };
-		g_dialMenuVtblAddr = (uintptr_t)scan_memory_data(dialpattern, 0x15, false, 0x3, 0x7);
+		g_dialMenuVtblAddr = (uintptr_t)scan_memory(dialpattern, 0x15, false, 0x3, 0x7);
 
 		g_dialNextFrameAddr = (uintptr_t)((void**)g_dialMenuVtblAddr)[5];
 	}
@@ -200,6 +200,8 @@ namespace Menus
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
+					push(r11);
+					push(r11);
 					push(r9);
 					push(r8);
 					push(rdx);
@@ -214,8 +216,12 @@ namespace Menus
 					pop(rdx);
 					pop(r8);
 					pop(r9);
+					pop(r11);
+					pop(r11);
 
-					mov(qword[rsp + 0x28], 0);
+					mov(qword[r11 - 0x50], rdi);
+					mov(dword[rsp + 0x30], 0x3);
+					//mov(qword[rsp + 0x28], 0); SE
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -223,7 +229,7 @@ namespace Menus
 					dq(funcAddr);
 
 					L(retnLabel);
-					dq(g_hudMenuNextFrameAddr + 0x5);
+					dq(g_hudMenuNextFrameAddr + 0x6);
 				}
 			};
 
@@ -232,10 +238,10 @@ namespace Menus
 			g_localTrampoline.EndAlloc(code.getCurr());
 
 
-			if (!g_branchTrampoline.Write5Branch(g_hudMenuNextFrameAddr, uintptr_t(code.getCode())))
+			if (!g_branchTrampoline.Write6Branch(g_hudMenuNextFrameAddr, uintptr_t(code.getCode())))
 				return false;
 
-			SafeWrite32(g_hudMenuNextFrameAddr + 0x5, NOP32);
+			SafeWrite16(g_hudMenuNextFrameAddr + 0x6, NOP16);
 		}
 
 		{
@@ -366,7 +372,7 @@ namespace Menus
 		}
 
 		SafeWrite64(g_dialMenuVtblAddr + 0x5 * 8, GetFnAddr(Tralala::DialMenuNextFrame_Hook));
-		
+
 		return true;
 	}
 }

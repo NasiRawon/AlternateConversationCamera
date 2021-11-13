@@ -26,60 +26,60 @@ namespace Tralala
 	void ObjectRefGetAddresses()
 	{
 		const std::array<BYTE, 8> pattern = { 0x8B, 0x40, 0x10, 0xC1, 0xE8, 0x17, 0xA8, 0x01 };
-		g_playerCharacterAddr = (uintptr_t)scan_memory_data(pattern, 0x23, true, 0x3, 0x7);
+		g_playerCharacterAddr = (uintptr_t)scan_memory(pattern, 0x23, true, 0x3, 0x7);
 
-		const std::array<BYTE, 10> invpattern = { 0x8B, 0x0C, 0x03, 0x89, 0x4C, 0x24, 0x40, 0x48, 0x8B, 0xD6 };
-		g_invalidRefHandleAddr = (uintptr_t)scan_memory_data(invpattern, 0x47, true, 0x2, 0x6);
+		const std::array<BYTE, 7> invpattern = { 0x89, 0x41, 0x10, 0xC6, 0x41, 0x40, 0x01 };
+		g_invalidRefHandleAddr = (uintptr_t)scan_memory(invpattern, 0x6, false, 0x2, 0x6);
 
-		const std::array<BYTE, 7> lookpattern = { 0x48, 0x6B, 0xD8, 0x78, 0x48, 0x8B, 0xCE };
-		g_lookupAddr = (uintptr_t)scan_memory_data(lookpattern, 0x32, true, 0x1, 0x5);
+		const std::array<BYTE, 14> lookpattern = { 0x48, 0x8B, 0x82, 0xF0, 0x01, 0x00, 0x00, 0x44, 0x8B, 0x80, 0x08, 0x01, 0x00, 0x00 };
+		g_lookupAddr = (uintptr_t)scan_memory(lookpattern, 0x77, true, 0x1, 0x5);
 
-		const std::array<BYTE, 7> mountpattern = { 0x48, 0x83, 0xC2, 0x54, 0x0F, 0x28, 0xDE };
-		g_isonmountAddr = (uintptr_t)scan_memory_data(mountpattern, 0x7A, false, 0x1, 0x5);
+		const std::array<BYTE, 6> mountpattern = { 0x88, 0x88, 0x62, 0x01, 0x00, 0x00 };
+		g_isonmountAddr = (uintptr_t)scan_memory(mountpattern, 0x17, false, 0x1, 0x5);
 
-		const std::array<BYTE, 8> angleZpattern = { 0x8B, 0xC2, 0xC1, 0xE8, 0x15, 0x83, 0xE0, 0x0F };
-		g_setAngleZAddr = (uintptr_t)scan_memory(angleZpattern, 0x6, false);
+		const std::array<BYTE, 12> angleZpattern = { 0x8B, 0xC2, 0x25, 0x00, 0x00, 0xE0, 0x01, 0x3D, 0x00, 0x00, 0x80, 0x00 };
+		g_setAngleZAddr = (uintptr_t)scan_memory(angleZpattern, 0xE, false);
 
-		const std::array<BYTE, 12> angleXpattern = { 0xC1, 0xE9, 0x05, 0x83, 0xE1, 0x07, 0x83, 0xE9, 0x03, 0x83, 0xF9, 0x02 };
-		g_setAngleXAddr = (uintptr_t)scan_memory(angleXpattern, 0x6B, false);
+		const std::array<BYTE, 12> angleXpattern = { 0x83, 0xA3, 0xC4, 0x00, 0x00, 0x00, 0xFB, 0x48, 0x83, 0x7F, 0x38, 0x00 };
+		g_setAngleXAddr = (uintptr_t)scan_memory(angleXpattern, 0x5, false, 0x1, 0x5);
 
-		const std::array<BYTE, 6> eqWeappattern = { 0x48, 0x89, 0x3E, 0x8B, 0x45, 0x5F };
-		g_equipWeaponAddr = (uintptr_t)scan_memory_data(eqWeappattern, 0x40, true, 0x1, 0x5);
+		const std::array<BYTE, 11> eqWeappattern = { 0x41, 0x0F, 0xB6, 0x87, 0x18, 0x01, 0x00, 0x00, 0xC0, 0xE8, 0x02 };
+		g_equipWeaponAddr = (uintptr_t)scan_memory(eqWeappattern, 0x1B, false, 0x1, 0x5);
 
 		const std::array<BYTE, 8> animBpattern = { 0x4C, 0x8B, 0x03, 0x48, 0x8D, 0x54, 0x24, 0x70 };
-		g_setAnimBoolAddr = (uintptr_t)scan_memory_data(animBpattern, 0x3D, true, 0x1, 0x5);
+		g_setAnimBoolAddr = (uintptr_t)scan_memory(animBpattern, 0x3D, true, 0x1, 0x5);
 
 		const std::array<BYTE, 11> tgtLocpattern = { 0xC6, 0x45, 0x67, 0x00, 0x48, 0x8B, 0x86, 0xF0, 0x01, 0x00, 0x00 };
-		g_setTargetLocAddr = (uintptr_t)scan_memory_data(tgtLocpattern, 0xA4, true, 0x1, 0x5);
+		g_setTargetLocAddr = (uintptr_t)scan_memory(tgtLocpattern, 0xA4, true, 0x1, 0x5);
 
 		const std::array<BYTE, 7> clearpattern = { 0x41, 0x8B, 0x00, 0x49, 0x83, 0xE8, 0x04 };
 		g_clearHeadTrackAddr = (uintptr_t)scan_memory(clearpattern, 0xEE, false);
 
-		const std::array<BYTE, 6> diapattern = { 0x4C, 0x8B, 0xCB, 0x40, 0x84, 0xF6};
-		g_setDialogueAddr = (uintptr_t)scan_memory_data(diapattern, 0x63, true, 0x1, 0x5);
+		const std::array<BYTE, 6> diapattern = { 0x4C, 0x8B, 0xCB, 0x40, 0x84, 0xF6 };
+		g_setDialogueAddr = (uintptr_t)scan_memory(diapattern, 0x63, true, 0x1, 0x5);
 
-		const std::array<BYTE, 6> castpattern = { 0x41, 0x8B, 0xEF, 0x4C, 0x8B, 0xF2 };
-		g_isCastingAddr = (uintptr_t)scan_memory(castpattern, 0x24, false);
+		const std::array<BYTE, 16> castpattern = { 0x8B, 0x81, 0xC0, 0x00, 0x00, 0x00, 0xC1, 0xE8, 0x1C, 0x80, 0xBE, 0x85, 0x00, 0x00, 0x00, 0x00 };
+		g_isCastingAddr = (uintptr_t)scan_memory(castpattern, 0x2B, true, 0x1, 0x5);
 
-		const std::array<BYTE, 8> sneakpattern = { 0x41, 0x8B, 0xC4, 0x25, 0x00, 0x00, 0xFF, 0xFF };
-		g_isSneakingAddr = (uintptr_t)scan_memory_data(sneakpattern, 0x54, true, 0x1, 0x5);
+		const std::array<BYTE, 8> sneakpattern = { 0xF3, 0x0F, 0x10, 0x73, 0x5C, 0x48, 0x85, 0xC9 };
+		g_isSneakingAddr = (uintptr_t)scan_memory(sneakpattern, 0x21, true, 0x1, 0x5);
 
-		const std::array<BYTE, 6> sneakHpattern = { 0x48, 0x8B, 0x06, 0x0F, 0x28, 0xC8 };
-		g_sneakingHeightAddr = (uintptr_t)scan_memory_data(sneakHpattern, 0x9E, true, 0x1, 0x5);
+		const std::array<BYTE, 8> sneakHpattern = { 0x41, 0xB0, 0x01, 0x33, 0xD2, 0x0F, 0x28, 0xC6 };
+		g_sneakingHeightAddr = (uintptr_t)scan_memory(sneakHpattern, 0xF, false, 0x1, 0x5);
 
-		g_cameraHeightAddr = (uintptr_t)scan_memory_data(sneakHpattern, 0xA5, true, 0x1, 0x5);
+		g_cameraHeightAddr = (uintptr_t)scan_memory(sneakpattern, 0x36, true, 0x1, 0x5);
 
 		const std::array<BYTE, 8> furnpattern = { 0x48, 0x05, 0x08, 0x02, 0x00, 0x00, 0x8B, 0x00 };
 		g_getFurnHandleAddr = (uintptr_t)scan_memory(furnpattern, 0x9, false);
 
 		const std::array<BYTE, 8> bhkWorldpattern = { 0x45, 0x0F, 0xB6, 0xC1, 0x41, 0x0F, 0xB6, 0xC9 };
-		g_getbhkWorldMAddr = (uintptr_t)scan_memory_data(bhkWorldpattern, 0x1F, true, 0x1, 0x5);
+		g_getbhkWorldMAddr = (uintptr_t)scan_memory(bhkWorldpattern, 0x1F, true, 0x1, 0x5);
 
 		const std::array<BYTE, 8> unkpattern = { 0x0F, 0x28, 0xDF, 0x4C, 0x8D, 0x44, 0x24, 0x60 };
-		g_unk_0x5ECF90Addr = (uintptr_t)scan_memory_data(unkpattern, 0x7E, true, 0x1, 0x5);
+		g_unk_0x5ECF90Addr = (uintptr_t)scan_memory(unkpattern, 0x7E, true, 0x1, 0x5);
 
-		const std::array<BYTE, 7> airpattern = { 0x83, 0x7D, 0x50, 0x00, 0x0F, 0x94, 0xC3 };
-		g_isInAirAddr = (uintptr_t)scan_memory_data(airpattern, 0x9B, false, 0x1, 0x5);
+		const std::array<BYTE, 7> airpattern = { 0xF6, 0x86, 0xD9, 0x0B, 0x00, 0x00, 0x10 };
+		g_isInAirAddr = (uintptr_t)scan_memory(airpattern, 0x2D, true, 0x1, 0x5);
 	}
 
 	void ActorProcessManager::SetTargetLocation(TESObjectREFR* source, NiPoint3* location)
@@ -129,13 +129,13 @@ namespace Tralala
 
 	bool LookupRefByHandle(UInt32& refHandle, NiPointer<TESObjectREFR>& refrOut)
 	{
-		typedef bool(*LookupREFRByHandle_t)(UInt32 &, NiPointer<TESObjectREFR> &);
+		typedef bool(*LookupREFRByHandle_t)(UInt32&, NiPointer<TESObjectREFR>&);
 		LookupREFRByHandle_t LookupREFRByHandle = (LookupREFRByHandle_t)g_lookupAddr;
 
 		return LookupREFRByHandle(refHandle, refrOut);
 	}
 
-	float TESObjectREFR::GetDistance(TESObjectREFR * target)
+	float TESObjectREFR::GetDistance(TESObjectREFR* target)
 	{
 		float x, y, z;
 
@@ -143,7 +143,7 @@ namespace Tralala
 		y = pos.y - target->pos.y;
 		z = pos.z - target->pos.z;
 
-		return sqrt(x*x + y*y + z*z);
+		return sqrt(x * x + y * y + z * z);
 	}
 
 	float TESObjectREFR::GetTargetHeight()
@@ -153,7 +153,7 @@ namespace Tralala
 	}
 
 	float TESObjectREFR::GetTargetWidth()
-	{	
+	{
 		NiPoint3 p1, p2;
 		return GetBoundRightBackTop(&p1)->x - GetBoundLeftFrontBottom(&p2)->x;
 	}
@@ -220,26 +220,26 @@ namespace Tralala
 
 	void Actor::SetAngleX(float angle)
 	{
-		typedef void(*SetAngleX_t)(Actor * actor, float angle);
+		typedef void(*SetAngleX_t)(Actor* actor, float angle);
 		SetAngleX_t SetAngleX = (SetAngleX_t)g_setAngleXAddr;
 
 		SetAngleX(this, angle);
 	}
-	
+
 	void Actor::SetAngleZ(float angle)
 	{
-		typedef void(*SetAngleZ_t)(Actor * actor, float angle);
+		typedef void(*SetAngleZ_t)(Actor* actor, float angle);
 		SetAngleZ_t SetAngleZ = (SetAngleZ_t)g_setAngleZAddr;
 
 		SetAngleZ(this, angle);
 	}
 
-	void Actor::GetTargetNeckPosition(NiPoint3 * pos)
+	void Actor::GetTargetNeckPosition(NiPoint3* pos)
 	{
 		NiAVObject* node = this->GetNiNode();
 		if (!node)
 			return GetMarkerPosition(pos);
-		
+
 		BSFixedString neckName("NPC Neck [Neck]");
 		node = node->GetObjectByName(&neckName.data);
 		if (!node)
@@ -252,7 +252,7 @@ namespace Tralala
 
 	TESObjectWEAP* Actor::GetEquippedWeapon(bool isLeftHand)
 	{
-		typedef TESObjectWEAP * (*GetEquippedWeapon_t)(Actor * actor, bool isLeftHand);
+		typedef TESObjectWEAP* (*GetEquippedWeapon_t)(Actor* actor, bool isLeftHand);
 		GetEquippedWeapon_t GetEquippedWeapon = (GetEquippedWeapon_t)g_equipWeaponAddr;
 
 		return GetEquippedWeapon(this, isLeftHand);
@@ -276,7 +276,7 @@ namespace Tralala
 		return IsCasting(this, spell);
 	}
 
-	bool Actor::GetTargetHeadNodePosition(NiPoint3 * pos, bool * compare)
+	bool Actor::GetTargetHeadNodePosition(NiPoint3* pos, bool* compare)
 	{
 		if (!processManager)
 			return false;
@@ -303,11 +303,11 @@ namespace Tralala
 		pos->y = headNode->m_worldTransform.pos.y;
 		pos->z = headNode->m_worldTransform.pos.z;
 
-		
+
 
 		return true;
 	}
-	
+
 	bool Actor::IsSneaking()
 	{
 		typedef bool(*IsSneaking_t)(Actor*);
@@ -340,7 +340,7 @@ namespace Tralala
 		return Unk_0x5ECF90(this);
 	}
 
-	PlayerCharacter * PlayerCharacter::GetSingleton()
+	PlayerCharacter* PlayerCharacter::GetSingleton()
 	{
 		return *(PlayerCharacter**)g_playerCharacterAddr;
 	}
@@ -352,7 +352,7 @@ namespace Tralala
 
 		if (this)
 			ret = this->animGraphHolder.SetAnimationVariableBool(isNPCVar, var);
-		
+
 		return ret;
 	}
 

@@ -355,13 +355,12 @@ namespace Graphics
 	void GetAddresses()
 	{
 		const std::array<BYTE, 6> unkpattern = { 0x4C, 0x8B, 0x09, 0x8B, 0x50, 0x30 };
-		g_unkStructAddr = (uintptr_t)scan_memory_data(unkpattern, 0x7, false, 0x3, 0x7);
+		g_unkStructAddr = (uintptr_t)scan_memory(unkpattern, 0x7, false, 0x3, 0x7);
 
 		g_presentAddr = (uintptr_t)scan_memory(unkpattern, 0x7, false);
 
-		const std::array<BYTE, 5> cleanPattern = { 0x41, 0x8B, 0xDE, 0x8B, 0xFD };
+		const std::array<BYTE, 12> cleanPattern = { 0x41, 0xBF, 0x03, 0x00, 0x00, 0x00, 0x41, 0x8B, 0xDC, 0x41, 0x8B, 0xFF };
 		g_cleanAddr = (uintptr_t)scan_memory(cleanPattern, 0x6D, false);
-
 #if 0
 		g_swapChainAddr = (uintptr_t)scan_memory_data(unkpattern, 0x15, false, 0x3, 0x7);
 
@@ -434,7 +433,8 @@ namespace Graphics
 					pop(rdx);
 					pop(rcx);
 
-					mov(qword[rsp + 0x20], rsi);
+					mov(qword[rsp + 0x18], rbp);
+					//mov(qword[rsp + 0x20], rsi);
 
 					jmp(ptr[rip + retnLabel]);
 

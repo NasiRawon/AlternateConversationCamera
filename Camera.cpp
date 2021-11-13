@@ -18,11 +18,11 @@ namespace Tralala
 
 	void PlayerCameraGetAddress()
 	{
-		const std::array<BYTE, 9> pattern = { 0x8B, 0x4D, 0xC7, 0x0F, 0xB6, 0xC9, 0x83, 0xF8, 0x04 };
-		g_playerCameraAddr = (uintptr_t)scan_memory_data(pattern, 0x21, true, 0x3, 0x7);
+		const std::array<BYTE, 8> pattern = { 0xF3, 0x0F, 0x11, 0x47, 0x3C, 0x48, 0x85, 0xC9 };
+		g_playerCameraAddr = (uintptr_t)scan_memory(pattern, 0x14, true, 0x3, 0x7);
 
-		const std::array<BYTE, 9> camStatepattern = { 0x48, 0x8B, 0x4F, 0x28, 0x48, 0x3B, 0xD9, 0x74, 0x29 };
-		g_setCameraStateAddr = (uintptr_t)scan_memory(camStatepattern, 0x1F, false);
+		const std::array<BYTE, 6> camStatepattern = { 0x48, 0x39, 0x41, 0x28, 0x74, 0x19 };
+		g_setCameraStateAddr = (uintptr_t)scan_memory(camStatepattern, 0x1A, true, 0x1, 0x5);
 
 		const std::array<BYTE, 7> camTargetpattern = { 0x89, 0x41, 0x3C, 0x48, 0x83, 0xC4, 0x20 };
 		g_setCamTargetAddr = (uintptr_t)scan_memory(camTargetpattern, 0x1C, false);
@@ -30,19 +30,20 @@ namespace Tralala
 		const std::array<BYTE, 6> firstPersonpattern = { 0x48, 0x39, 0x41, 0x28, 0x74, 0x19 };
 		g_forceFirstPersonAddr = (uintptr_t)scan_memory(firstPersonpattern, 0x1B, false);
 
-		const std::array<BYTE, 8> camColpattern = { 0xF3, 0x0F, 0x59, 0x5F, 0x18, 0x0F, 0x28, 0xC7 };
-		g_processCamColAddr = (uintptr_t)scan_memory_data(camColpattern, 0x7B, true, 0x1, 0x5);
+		const std::array<BYTE, 11> camColpattern = { 0x48, 0x8D, 0x51, 0x40, 0x48, 0x8B, 0x49, 0x10, 0x41, 0xB0, 0x01 };
+		g_processCamColAddr = (uintptr_t)scan_memory(camColpattern, 0xD, false);
 
-		const std::array<BYTE, 8> penetpattern = { 0xF3, 0x0F, 0x10, 0x55, 0x80, 0x0F, 0x28, 0xCA };
-		g_getPenetrationAddr = (uintptr_t)scan_memory_data(penetpattern, 0x7D, true, 0x1, 0x5);
+		const std::array<BYTE, 12> penetpattern = { 0x49, 0x8B, 0xF0, 0x48, 0x8B, 0xFA, 0x4C, 0x8B, 0xE9, 0x45, 0x32, 0xE4 };
+		g_getPenetrationAddr = (uintptr_t)scan_memory(penetpattern, 0x3A, false);
 
-		g_getClosestPointAddr = (uintptr_t)scan_memory_data(penetpattern, 0xF0, false, 0x1, 0x5);
+		const std::array<BYTE, 17> closestpattern = { 0x4C, 0x8D, 0x4C, 0x24, 0x60, 0x4C, 0x8D, 0x44, 0x24, 0x40, 0x48, 0x8B, 0x8F, 0x20, 0x01, 0x00, 0x00 };
+		g_getClosestPointAddr = (uintptr_t)scan_memory(closestpattern, 0x11, true, 0x1, 0x5);
 
-		const std::array<BYTE, 6> processColPattern = { 0x0F, 0x28, 0xD8, 0x0F, 0x2F, 0xD8 };
-		g_camProcessColAddr = (uintptr_t)scan_memory_data(processColPattern, 0xBF, false, 0x1, 0x5);
+		const std::array<BYTE, 11> processColPattern = { 0x48, 0x8D, 0x51, 0x40, 0x48, 0x8B, 0x49, 0x10, 0x41, 0xB0, 0x01 };
+		g_camProcessColAddr = (uintptr_t)scan_memory(processColPattern, 0xB, true, 0x1, 0x5);
 	}
 
-	float ThirdPersonState::GetDistanceWithinTargetHead(Actor * target)
+	float ThirdPersonState::GetDistanceWithinTargetHead(Actor* target)
 	{
 		if (!target || !target->processManager || !target->processManager->middleProcess)
 			return FLT_MAX;
@@ -56,7 +57,7 @@ namespace Tralala
 		dist.y = camPos.y - headNode->m_worldTransform.pos.y;
 		dist.z = camPos.z - headNode->m_worldTransform.pos.z;
 
-		return (dist.x*dist.x + dist.y*dist.y + dist.z*dist.z);
+		return (dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 	}
 
 	void ThirdPersonState::SetFirstPersonSmooth(float minZoom, bool overShoulder)
@@ -91,7 +92,7 @@ namespace Tralala
 		ProcessCamCol(this);
 	}
 
-	void TESCamera::SetCameraState(TESCameraState * camState)
+	void TESCamera::SetCameraState(TESCameraState* camState)
 	{
 		typedef UInt32(*SetCameraState_t)(TESCamera* camera, TESCameraState* cameraState);
 		SetCameraState_t SetCameraState = (SetCameraState_t)g_setCameraStateAddr;
@@ -109,7 +110,7 @@ namespace Tralala
 			if (!pObj)
 				continue;
 
-			if (strcmp(pObj->GetRTTI()->name, "NiCamera") == 0) 
+			if (strcmp(pObj->GetRTTI()->name, "NiCamera") == 0)
 			{
 				camera = (NiCamera*)pObj;
 				break;
@@ -119,7 +120,7 @@ namespace Tralala
 		return camera;
 	}
 
-	PlayerCamera * PlayerCamera::GetSingleton()
+	PlayerCamera* PlayerCamera::GetSingleton()
 	{
 		return *(PlayerCamera**)g_playerCameraAddr;
 	}
@@ -134,26 +135,26 @@ namespace Tralala
 		return cameraState == cameraStates[kCameraState_ThirdPerson2];
 	}
 
-	TESCameraState * PlayerCamera::ProcessCameraTransition(UInt32 srcCamState, UInt32 dstCamState, bool face2face)
+	TESCameraState* PlayerCamera::ProcessCameraTransition(UInt32 srcCamState, UInt32 dstCamState, bool face2face)
 	{
-		TESCameraState * target = cameraStates[srcCamState];
+		TESCameraState* target = cameraStates[srcCamState];
 
-		TweenMenuCameraState * tween = (TweenMenuCameraState*)cameraStates[kCameraState_TweenMenu];
+		TweenMenuCameraState* tween = (TweenMenuCameraState*)cameraStates[kCameraState_TweenMenu];
 		if (cameraState == tween)
 		{
-			typedef SInt32(*PushTargetCamState_t)(Data40 * data40, TESCameraState * camState);
+			typedef SInt32(*PushTargetCamState_t)(Data40* data40, TESCameraState* camState);
 			PushTargetCamState_t PushTargetCamState = (PushTargetCamState_t)g_pushTargetCamAddr;
 
 			PushTargetCamState(&unk40, target);
 		}
 		else
 		{
-			typedef SInt32(*PushCurrentCamState_t)(Data40 * data40, TESCameraState ** camState);
+			typedef SInt32(*PushCurrentCamState_t)(Data40* data40, TESCameraState** camState);
 			PushCurrentCamState_t PushCurrentCamState = (PushCurrentCamState_t)g_pushCurrentCamAddr;
 
 			if (face2face)
 			{
-				TESCameraState * destination = cameraStates[dstCamState];
+				TESCameraState* destination = cameraStates[dstCamState];
 				PushCurrentCamState(&unk40, &destination);
 			}
 			else
@@ -177,7 +178,7 @@ namespace Tralala
 
 	void PlayerCamera::ForceFirstPerson()
 	{
-		typedef void(*ForceFirstPerson_t)(PlayerCamera * camera);
+		typedef void(*ForceFirstPerson_t)(PlayerCamera* camera);
 		ForceFirstPerson_t ForceFirstPerson = (ForceFirstPerson_t)g_forceFirstPersonAddr;
 
 		ThirdPersonState* tps = GetThirdPersonCamera();
@@ -188,7 +189,7 @@ namespace Tralala
 
 	void PlayerCamera::ForceThirdPerson()
 	{
-		ThirdPersonState * tps = GetThirdPersonCamera();
+		ThirdPersonState* tps = GetThirdPersonCamera();
 
 		tps->basePosX = tps->fOverShoulderPosX;
 		tps->basePosY = tps->fOverShoulderCombatAddY;
@@ -200,13 +201,13 @@ namespace Tralala
 
 	void PlayerCamera::UpdateThirdPersonMode(bool weaponDrawn)
 	{
-		typedef void(*UpdateThirdPersonMode_t)(PlayerCamera * camera, bool weaponDrawn);
+		typedef void(*UpdateThirdPersonMode_t)(PlayerCamera* camera, bool weaponDrawn);
 		UpdateThirdPersonMode_t UpdateThirdPersonMode = (UpdateThirdPersonMode_t)g_updateThirdPersonAddr;
 
 		UpdateThirdPersonMode(this, weaponDrawn);
 	}
 
-	bool PlayerCamera::GetDistanceWithTargetBone(Actor * target, NiPoint3 * dist)
+	bool PlayerCamera::GetDistanceWithTargetBone(Actor* target, NiPoint3* dist)
 	{
 		NiPoint3 targetPos;
 
@@ -219,21 +220,21 @@ namespace Tralala
 		return true;
 	}
 
-	float PlayerCamera::GetDistanceWithTargetBone(Actor * target, bool firstPerson)
+	float PlayerCamera::GetDistanceWithTargetBone(Actor* target, bool firstPerson)
 	{
 		NiPoint3 neckPos;
 		NiPoint3 camPos;
-		
+
 		target->GetTargetNeckPosition(&neckPos);
 
 		if (firstPerson)
 		{
-			PlayerCharacter * player = PlayerCharacter::GetSingleton();
+			PlayerCharacter* player = PlayerCharacter::GetSingleton();
 
 			camPos.x = player->pos.x;
 			camPos.y = player->pos.y;
 
-			FirstPersonState * fps = GetFirstPersonCamera();
+			FirstPersonState* fps = GetFirstPersonCamera();
 			if (fps->cameraNode)
 			{
 				camPos.z = player->pos.z + fps->cameraNode->m_localTransform.pos.z;
@@ -245,7 +246,7 @@ namespace Tralala
 		}
 		else
 		{
-			ThirdPersonState * tps = GetThirdPersonCamera();
+			ThirdPersonState* tps = GetThirdPersonCamera();
 			camPos = tps->camPos;
 		}
 
@@ -253,13 +254,13 @@ namespace Tralala
 		float dy = neckPos.y - camPos.y;
 		float dz = neckPos.z - camPos.z;
 
-		return sqrt(dx*dx + dy*dy + dz*dz);
+		return sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
-	bool PlayerCamera::GetPenetration(Actor * target, NiPoint3* sourcePos, float radiusToCheck, 
+	bool PlayerCamera::GetPenetration(Actor* target, NiPoint3* sourcePos, float radiusToCheck,
 		float offsetActorFromGround)
 	{
-		typedef bool(*GetPenetration_t)(SimpleShapePhantom*, Actor *, NiPoint3*, float, float);
+		typedef bool(*GetPenetration_t)(SimpleShapePhantom*, Actor*, NiPoint3*, float, float);
 		GetPenetration_t GetPenetration = (GetPenetration_t)g_getPenetrationAddr;
 
 		return GetPenetration(simpleShapePhantoms, target, sourcePos, radiusToCheck, offsetActorFromGround);
@@ -268,11 +269,11 @@ namespace Tralala
 	bool PlayerCamera::GetClosestPoint(void* bhkWorldM, NiPoint3* sourcePos, NiPoint3* resultPos,
 		Havok::hkpRootCdPoint* resultInfo, Actor** resultActor, float radiusToCheck)
 	{
-		typedef bool(*GetClosestPoint_t)(SimpleShapePhantom*, void*, NiPoint3*, 
+		typedef bool(*GetClosestPoint_t)(SimpleShapePhantom*, void*, NiPoint3*,
 			NiPoint3*, Havok::hkpRootCdPoint*, Actor**, float);
 		GetClosestPoint_t GetClosestPoint = (GetClosestPoint_t)g_getClosestPointAddr;
 
-		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos, 
+		return GetClosestPoint(simpleShapePhantoms, bhkWorldM, sourcePos, resultPos,
 			resultInfo, resultActor, radiusToCheck);
 	}
 
@@ -289,7 +290,7 @@ namespace Tralala
 		NiCamera* niCamera = GetNiCamera();
 		if (!niCamera)
 			return false;
-	
+
 		// project a world space point to screen space
 		float w = pos->x * niCamera->m_aafWorldToCam[3][0] +
 			pos->y * niCamera->m_aafWorldToCam[3][1] + pos->z * niCamera->m_aafWorldToCam[3][2] +
@@ -350,6 +351,6 @@ namespace Tralala
 		}
 
 		return false;
-		
+
 	}
 }

@@ -20,7 +20,7 @@
 IDebugLog				gLog;
 PluginHandle			g_pluginHandle = kPluginHandle_Invalid;
 
-void * g_moduleHandle = nullptr;
+void* g_moduleHandle = nullptr;
 
 uintptr_t g_defaultWorldFOVAddr = 0;
 uintptr_t g_defaultFirstFOVAddr = 0;
@@ -28,7 +28,7 @@ uintptr_t g_onCameraMoveAddr = 0;
 uintptr_t g_disablePlayerLookAddr = 0;
 uintptr_t g_dialogueMenuAddr = 0;
 uintptr_t g_raceMenuAddr = 0;
-uintptr_t g_processMovementAddr = 0;
+//uintptr_t g_processMovementAddr = 0;
 uintptr_t g_minCurrentZoomAddr = 0;
 uintptr_t g_onPlayerDeathAddr = 0;
 uintptr_t g_freeLookAddr = 0;
@@ -41,21 +41,21 @@ uintptr_t g_beginSaveAddr = 0;
 uintptr_t g_finishSaveAddr = 0;
 uintptr_t g_thirdCamHeightAddr = 0;
 uintptr_t g_thirdCamColAddr = 0;
-uintptr_t g_thirdCamUpdateAddr = 0;
+//uintptr_t g_thirdCamUpdateAddr = 0;
 uintptr_t g_camCollisionAddr = 0;
 
 void MainGetAddresses()
 {
 	const std::array<BYTE, 10> worldFOVpattern = { 0x0F, 0x28, 0xC1, 0xF3, 0x0F, 0x5E, 0xC6, 0x0F, 0x28, 0xF0 };
-	g_defaultWorldFOVAddr = (uintptr_t)scan_memory_data(worldFOVpattern, 0x5F, true, 0x4, 0x8);
+	g_defaultWorldFOVAddr = (uintptr_t)scan_memory(worldFOVpattern, 0x5F, true, 0x4, 0x8);
 
-	g_defaultFirstFOVAddr = (uintptr_t)scan_memory_data(worldFOVpattern, 0x6F, true, 0x4, 0x8);
+	g_defaultFirstFOVAddr = (uintptr_t)scan_memory(worldFOVpattern, 0x6F, true, 0x4, 0x8);
 
 	const std::array<BYTE, 6> minZoompattern = { 0x8B, 0x47, 0x58, 0x89, 0x47, 0x64 };
-	g_minCurrentZoomAddr = (uintptr_t)scan_memory_data(minZoompattern, 0x6, true, 0x4, 0x8);
+	g_minCurrentZoomAddr = (uintptr_t)scan_memory(minZoompattern, 0x6, true, 0x4, 0x8);
 
-	const std::array<BYTE, 11> cameraMovepattern = { 0x4C, 0x8B, 0xC3, 0x48, 0x8B, 0xD7, 0xB9, 0x14, 0x00, 0x00, 0x00 };
-	g_onCameraMoveAddr = (uintptr_t)scan_memory(cameraMovepattern, 0x6F, false);
+	const std::array<BYTE, 13> cameraMovepattern = { 0x0F, 0xB6, 0x88, 0x9D, 0x01, 0x00, 0x00, 0x80, 0xE9, 0x07, 0xF6, 0xC1, 0xFD };
+	g_onCameraMoveAddr = (uintptr_t)scan_memory(cameraMovepattern, 0x11, false);
 
 	const std::array<BYTE, 7> lookpattern = { 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x43, 0x1C };
 	g_disablePlayerLookAddr = (uintptr_t)scan_memory(lookpattern, 0x91, false);
@@ -64,11 +64,11 @@ void MainGetAddresses()
 
 	g_raceMenuAddr = (uintptr_t)scan_memory(lookpattern, 0xBE, false);
 
-	const std::array<BYTE, 6> processMovepattern = { 0x0F, 0x28, 0xF7, 0x48, 0x8B, 0xCB };
-	g_processMovementAddr = (uintptr_t)scan_memory(processMovepattern, 0x4B, false);
+	//const std::array<BYTE, 6> processMovepattern = { 0x0F, 0x28, 0xF7, 0x48, 0x8B, 0xCB };
+	//g_processMovementAddr = (uintptr_t)scan_memory(processMovepattern, 0x4B, false);
 
-	const std::array<BYTE, 11> playerDeathpattern = { 0x4C, 0x8B, 0xC3, 0x48, 0x8B, 0xD7, 0xB9, 0x14, 0x00, 0x00, 0x00 };
-	g_onPlayerDeathAddr = (uintptr_t)scan_memory(playerDeathpattern, 0xD0, true);
+	const std::array<BYTE, 11> playerDeathpattern = { 0x44, 0x0F, 0xB6, 0xF8, 0xF6, 0x86, 0xDA, 0x0B, 0x00, 0x00, 0x0E };
+	g_onPlayerDeathAddr = (uintptr_t)scan_memory(playerDeathpattern, 0x22, true);
 
 	const std::array<BYTE, 4> freeLookpattern = { 0x80, 0x79, 0x4B, 0x00 };
 	g_freeLookAddr = (uintptr_t)scan_memory(freeLookpattern, 0x10, false);
@@ -82,26 +82,26 @@ void MainGetAddresses()
 	const std::array<BYTE, 6> clrTgtpattern = { 0x49, 0x8B, 0xC7, 0x0F, 0x57, 0xFF };
 	g_clearTargetAddr = (uintptr_t)scan_memory(clrTgtpattern, 0x4A, false);
 
-	g_actorPerFrameAddr = (uintptr_t)scan_memory_data(clrTgtpattern, 0x4A, false, 0x2, 0x6);
+	g_actorPerFrameAddr = (uintptr_t)scan_memory(clrTgtpattern, 0x4A, false, 0x2, 0x6);
 
-	g_updateActorAddr = (uintptr_t)scan_memory_data(clrTgtpattern, 0x44, false, 0x2, 0x6);
+	g_updateActorAddr = (uintptr_t)scan_memory(clrTgtpattern, 0x44, false, 0x2, 0x6);
 
-	const std::array<BYTE, 7> beginPattern = { 0x4C, 0x8D, 0x45, 0x20, 0x48, 0x8B, 0xD7 };
-	g_beginSaveAddr = (uintptr_t)scan_memory(beginPattern, 0x64, false);
+	const std::array<BYTE, 15> beginPattern = { 0x41, 0x83, 0x8D, 0x40, 0x03, 0x00, 0x00, 0x04, 0x48, 0x8B, 0x82, 0xB0, 0x0B, 0x00, 0x00 };
+	g_beginSaveAddr = (uintptr_t)scan_memory(beginPattern, 0x3D, false);
 
-	const std::array<BYTE, 7> finishPattern = { 0x89, 0x45, 0xA4, 0x4C, 0x8D, 0x45, 0x20 };
-	g_finishSaveAddr = (uintptr_t)scan_memory(finishPattern, 0x8D, true);
+	const std::array<BYTE, 7> finishPattern = { 0x89, 0x45, 0xD4, 0x4C, 0x8D, 0x45, 0x50 };
+	g_finishSaveAddr = (uintptr_t)scan_memory(finishPattern, 0x8A, true);
 
-	const std::array<BYTE, 8> camHeightPattern = { 0xF3, 0x0F, 0x59, 0x5F, 0x18, 0x0F, 0x28, 0xC7 };
-	g_thirdCamHeightAddr = (uintptr_t)scan_memory(camHeightPattern, 0x71, false);
+	const std::array<BYTE, 12> camHeightPattern = { 0xF3, 0x0F, 0x11, 0x43, 0x08, 0x80, 0xBF, 0xE1, 0x00, 0x00, 0x00, 0x00 };
+	g_thirdCamHeightAddr = (uintptr_t)scan_memory(camHeightPattern, 0x12, true);
 
-	g_thirdCamColAddr = (uintptr_t)scan_memory(camHeightPattern, 0x7B, true);
+	g_thirdCamColAddr = (uintptr_t)scan_memory(camHeightPattern, 0xF4, true);
 
-	const std::array<BYTE, 9> onUpdatePattern = { 0x48, 0x8D, 0x54, 0x24, 0x38, 0x48, 0x8B, 0x4B, 0x10 };
-	g_thirdCamUpdateAddr = (uintptr_t)scan_memory(onUpdatePattern, 0x99, false);
+	//const std::array<BYTE, 9> onUpdatePattern = { 0x48, 0x8D, 0x54, 0x24, 0x38, 0x48, 0x8B, 0x4B, 0x10 };
+	//g_thirdCamUpdateAddr = (uintptr_t)scan_memory(onUpdatePattern, 0x99, false);
 
-	const std::array<BYTE, 6> camColPattern = { 0x0F, 0x28, 0xD8, 0x0F, 0x2F, 0xD8 };
-	g_camCollisionAddr = (uintptr_t)scan_memory(camColPattern, 0xBF, false);
+	const std::array<BYTE, 11> camColPattern = { 0xF3, 0x0F, 0x11, 0x5B, 0x08, 0x41, 0xB0, 0x01, 0x48, 0x8B, 0xD3 };
+	g_camCollisionAddr = (uintptr_t)scan_memory(camColPattern, 0xF, true);
 }
 
 
@@ -146,7 +146,7 @@ namespace Tralala
 		g_fovStep = step;
 	}
 
-	static bool IsValidFaceToFace(PlayerCamera * camera, Actor** ret)
+	static bool IsValidFaceToFace(PlayerCamera* camera, Actor** ret)
 	{
 		if (!camera->IsCameraFirstPerson() && !camera->IsCameraThirdPerson())
 			return false;
@@ -171,10 +171,10 @@ namespace Tralala
 	}
 
 
-	void DialogueMenuEventHandler(MenuOpenCloseEvent * evn)
+	void DialogueMenuEventHandler(MenuOpenCloseEvent* evn)
 	{
-		PlayerCharacter * player = PlayerCharacter::GetSingleton();
-		PlayerCamera * camera = PlayerCamera::GetSingleton();
+		PlayerCharacter* player = PlayerCharacter::GetSingleton();
+		PlayerCamera* camera = PlayerCamera::GetSingleton();
 
 		static UInt32 cameraStateIDStarter = 0;
 		float minZoom = *(float*)g_minCurrentZoomAddr;
@@ -185,7 +185,7 @@ namespace Tralala
 		if (evn->opening)
 		{
 			Actor* actor = nullptr;
-		
+
 			if (!IsValidFaceToFace(camera, &actor))
 			{
 				g_refTarget = nullptr;
@@ -287,7 +287,7 @@ namespace Tralala
 			}
 		}
 		else
-		{		
+		{
 
 			if (!g_zoom)
 				return;
@@ -326,7 +326,7 @@ namespace Tralala
 
 					tps->diffRotX = tps->diffRotZ = 0.0f;
 
-					if (Settings::bForceFirstPerson && 
+					if (Settings::bForceFirstPerson &&
 						(Settings::bSmoothTransition || camera->IsCameraFirstPerson()))
 						camera->ForceThirdPerson();
 
@@ -346,12 +346,12 @@ namespace Tralala
 		}
 	}
 
-	void MenuEventHandler(MenuOpenCloseEvent * evn) 
+	void MenuEventHandler(MenuOpenCloseEvent* evn)
 	{
 		if (evn->opening)
 		{
 			BSFixedString racesexMenu("RaceSex Menu");
-		
+
 			if (evn->menuName == racesexMenu) // fix for face sculptor
 			{
 				PlayerCamera* camera = PlayerCamera::GetSingleton();
@@ -364,7 +364,7 @@ namespace Tralala
 		}
 	}
 
-	float RotateCamera(PlayerCamera * camera, Actor* source, Actor* target, 
+	float RotateCamera(PlayerCamera* camera, Actor* source, Actor* target,
 		TESCameraController* controller, bool calcCrosshairToBoneMag)
 	{
 		NiPoint3 pos;
@@ -373,7 +373,7 @@ namespace Tralala
 
 		float xy, rotZ, rotX = 0.0f;
 
-		xy = sqrtf(pos.x*pos.x + pos.y*pos.y);
+		xy = sqrtf(pos.x * pos.x + pos.y * pos.y);
 		rotZ = atan2f(pos.x, pos.y);
 		rotX = atan2f(-pos.z, xy);
 
@@ -393,7 +393,7 @@ namespace Tralala
 
 					angleDiffZ = rotZ - source->rot.z;
 					angleDiffX = rotX - source->rot.x;
-				
+
 					while (angleDiffZ < -PI)
 						angleDiffZ += 2.0f * PI;
 					while (angleDiffZ > PI)
@@ -527,7 +527,7 @@ namespace Tralala
 					fps->sittingRot += angleDiffZ;
 					if (calcCrosshairToBoneMag)
 					{
-						if (sqrtf(angleDiffX*angleDiffX + angleDiffZ*angleDiffZ) <= 0.0005f)
+						if (sqrtf(angleDiffX * angleDiffX + angleDiffZ * angleDiffZ) <= 0.0005f)
 							diffAngleZ = 0.0f;
 						else
 							diffAngleZ = angleDiffZ;
@@ -569,30 +569,30 @@ namespace Tralala
 				{
 					diffAngleZ = angleDiffZ;
 					diffAngleX = angleDiffX;
-				}	
+				}
 			}
 		}
 
 		float crosshairDist = 0.0f;
 
 		if (calcCrosshairToBoneMag)
-			crosshairDist = sqrtf(diffAngleZ*diffAngleZ + diffAngleX*diffAngleX);
+			crosshairDist = sqrtf(diffAngleZ * diffAngleZ + diffAngleX * diffAngleX);
 
 		return crosshairDist;
 	}
 
-	TESObjectWEAP * OnCameraMove(PlayerCharacter * player, bool isLeftHand)
+	TESObjectWEAP* OnCameraMove(PlayerCharacter* player, bool isLeftHand)
 	{
 		if (Settings::bHeadTracking && Settings::bConversationHT && player->IsOnMount())
 			player->SetIsNPCAnimVar();
 
 		PlayerCamera* camera = PlayerCamera::GetSingleton();
-		TESCameraController * controller = TESCameraController::GetSingleton();
+		TESCameraController* controller = TESCameraController::GetSingleton();
 		MenuTopicManager* mtm = MenuTopicManager::GetSingleton();
 
 		if (camera->IsCameraFirstPerson() || camera->IsCameraThirdPerson())
 		{
-			if (Settings::bHeadTracking) 
+			if (Settings::bHeadTracking)
 			{
 				BSFixedString isNPCVar("IsNPC");
 
@@ -600,7 +600,7 @@ namespace Tralala
 					player->animGraphHolder.SetAnimationVariableBool(isNPCVar, true);
 				else
 				{
-					UInt32 attackState = player->actorState.flags08 >> 0x1C; 
+					UInt32 attackState = player->actorState.flags08 >> 0x1C;
 					switch (attackState)
 					{
 					case 0x1: // fix for melee
@@ -642,7 +642,7 @@ namespace Tralala
 			else
 			{
 
-				if(!g_refTarget || !g_lock)
+				if (!g_refTarget || !g_lock)
 					return player->GetEquippedWeapon(isLeftHand);
 
 				if (Settings::bLockOn || mtm->talkingHandle == 0 || g_thirdDistance <= 0.0f)
@@ -652,7 +652,7 @@ namespace Tralala
 
 					ThirdPersonState* tps = camera->GetThirdPersonCamera();
 
-					if (!Settings::bForceThirdPerson && 
+					if (!Settings::bForceThirdPerson &&
 						(Settings::bForceFirstPerson || camera->IsCameraFirstPerson()))
 					{
 						if (g_refTarget->IsFlyingActor())
@@ -720,10 +720,10 @@ namespace Tralala
 
 										if (startSwitch && camera->cameraRefHandle == PlayerRefHandle
 											&& g_delay <= 0.0f && !g_endSwitch)
-										{										
+										{
 											camera->SetCameraTarget(g_refTarget);
 											startSwitch = false;
-											g_processSwitch = true;							
+											g_processSwitch = true;
 										}
 									}
 								}
@@ -792,13 +792,13 @@ namespace Tralala
 	void OnPlayerDeath()
 	{
 		g_refTarget = nullptr;
-		PlayerCamera * camera = PlayerCamera::GetSingleton();
+		PlayerCamera* camera = PlayerCamera::GetSingleton();
 		if (camera)
 		{
 			camera->worldFOV = *(float*)g_defaultWorldFOVAddr;
 			camera->firstPersonFOV = *(float*)g_defaultFirstFOVAddr;
 
-			PlayerCharacter * player = PlayerCharacter::GetSingleton();
+			PlayerCharacter* player = PlayerCharacter::GetSingleton();
 			if (Settings::bSwitchTarget)
 				camera->SetCameraTarget(player);
 		}
@@ -821,7 +821,7 @@ namespace Tralala
 
 			return actor->GetCameraHeight();
 		}
-		
+
 		NiPoint3 headPos;
 		bool ret = false;
 
@@ -963,7 +963,7 @@ namespace Tralala
 						IMovementSetGoal* setGoal = (IMovementSetGoal*)movementIntfc;
 						UInt32 unkVar = *(UInt32*)(setGoal + 0x6);
 
-						if(unkVar != 3)
+						if (unkVar != 3)
 							setGoal->ClearPathingRequest();
 					}
 				}
@@ -982,7 +982,7 @@ namespace Tralala
 					headPosRet = false;
 					g_refTarget->GetMarkerPosition(&headPos);
 				}
-				
+
 				NiPoint3 resultPos;
 				resultPos = tps->camPos;
 
@@ -995,23 +995,23 @@ namespace Tralala
 				if (camera->GetClosestPoint(player->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 					&resultActor, 1.0f))
 				{
-	#if 0
-					NiAVObject * niObject = resultInfo.hkpCollidableB->GetNiObject();
+#if 0
+					NiAVObject* niObject = resultInfo.hkpCollidableB->GetNiObject();
 					if (niObject)
 					{
 						_MESSAGE("__PLAYER__ name %s",
 							niObject->m_name);
 					}
 
-	#endif
-				
+#endif
+
 					isPCCollided = true;
 				}
 
 				if (isPCCollided)
 				{
-					NiPoint3 offset(Settings::fHumanCamOffsetX, 
-						Settings::fHumanCamOffsetY, 
+					NiPoint3 offset(Settings::fHumanCamOffsetX,
+						Settings::fHumanCamOffsetY,
 						Settings::fHumanCamOffsetZ);
 					if (!headPosRet)
 					{
@@ -1168,14 +1168,14 @@ namespace Tralala
 				if (camera->GetClosestPoint(g_refTarget->GetbhkWorldM(), &targetHeadPos, &resultPos, &resultInfo,
 					&resultActor, 1.0f))
 				{
-	#if 0
-					NiAVObject * niObject = resultInfo.hkpCollidableB->GetNiObject();
+#if 0
+					NiAVObject* niObject = resultInfo.hkpCollidableB->GetNiObject();
 					if (niObject)
 					{
 						_MESSAGE("__NPC__ name %s",
 							niObject->m_name);
 					}
-	#endif
+#endif
 					isNPCCollided = true;
 
 				}
@@ -1187,7 +1187,7 @@ namespace Tralala
 					pcRotate = true;
 					npcRotate = true;
 					curDistance = 0.0f;
-				
+
 					if (camera->objectFadeHandle == PlayerRefHandle)
 					{
 						isFade = true;
@@ -1219,7 +1219,7 @@ namespace Tralala
 				}
 
 				npcRotate = true;
-				
+
 				if (isNPCCollided)
 				{
 					NiPoint3 offset(Settings::fHumanCamOffsetX,
@@ -1250,7 +1250,7 @@ namespace Tralala
 						npcHeight = targetPos.z - g_refTarget->pos.z;
 
 					targetPos.x = g_refTarget->pos.x;
-					targetPos.y = g_refTarget->pos.y;			
+					targetPos.y = g_refTarget->pos.y;
 					targetPos.z = g_refTarget->pos.z + npcHeight;
 				}
 
@@ -1385,16 +1385,16 @@ namespace Tralala
 					}
 				}
 			}
-		
+
 			isFade = false;
 		}
-	
+
 		return camera->ProcessCollision(camPos, isFade);
 	}
 
-	bool SetFreeLook(ThirdPersonState * tps, bool freeLook)
+	bool SetFreeLook(ThirdPersonState* tps, bool freeLook)
 	{
-		PlayerCamera * camera = (PlayerCamera*)tps->camera;
+		PlayerCamera* camera = (PlayerCamera*)tps->camera;
 
 		if (Settings::bSwitchTarget && MenuTopicManager::GetSingleton()->isInDialogueState
 			&& g_refTarget /*&& (!camera->isWeapSheathed || camera->cameraRefHandle != PlayerRefHandle)*/)
@@ -1438,13 +1438,13 @@ namespace Tralala
 
 			if (source == player)
 			{
-				if (Settings::bHeadTracking && Settings::bConversationHT && 
+				if (Settings::bHeadTracking && Settings::bConversationHT &&
 					(!mtm->isInDialogueState || !g_refTarget))
-					return true; 
+					return true;
 			}
 
 			return false;
-		}	
+		}
 	}
 
 	void BeginSavingHook()
@@ -1472,7 +1472,7 @@ namespace Tralala
 extern "C"
 {
 
-	bool SKSEPlugin_Query(const SKSEInterface * skse, PluginInfo * info)
+	bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 	{
 
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\Alternate Conversation Camera.log");
@@ -1504,10 +1504,10 @@ extern "C"
 		return true;
 	}
 
-	bool SKSEPlugin_Load(const SKSEInterface * skse)
+	bool SKSEPlugin_Load(const SKSEInterface* skse)
 	{
 		_MESSAGE("Load");
-		
+
 		MainGetAddresses();
 		Tralala::UtilsGetAddresses();
 		Tralala::PlayerCameraGetAddress();
@@ -1519,9 +1519,11 @@ extern "C"
 		Havok::GetAddresses();
 
 		Settings::Load();
+
+
 		{
 			struct InstallHookDialogueMenu_Code : Xbyak::CodeGenerator {
-				InstallHookDialogueMenu_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookDialogueMenu_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel1;
 					Xbyak::Label retnLabel2;
@@ -1558,11 +1560,12 @@ extern "C"
 					dq(g_dialogueMenuAddr + 0x6);
 
 					L(retnLabel2);
-					dq(g_dialogueMenuAddr + 0xD0);
+					dq(g_dialogueMenuAddr + 0xD6);
+					//dq(g_dialogueMenuAddr + 0xD0); SE
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookDialogueMenu_Code code(codeBuf, GetFnAddr(Tralala::DialogueMenuEventHandler));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1570,10 +1573,10 @@ extern "C"
 			if (!g_branchTrampoline.Write6Branch(g_dialogueMenuAddr, uintptr_t(code.getCode())))
 				return false;
 		}
-		
+
 		{
 			struct InstallHookMenuEventHandler_Code : Xbyak::CodeGenerator {
-				InstallHookMenuEventHandler_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookMenuEventHandler_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel1;
 					Xbyak::Label retnLabel2;
@@ -1610,11 +1613,12 @@ extern "C"
 					jmp(ptr[rip + retnLabel2]);
 
 					L(retnLabel2);
-					dq(g_raceMenuAddr + 0xED);
+					dq(g_raceMenuAddr + 0xF3);
+					//dq(g_raceMenuAddr + 0xED); SE
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookMenuEventHandler_Code code(codeBuf, GetFnAddr(Tralala::MenuEventHandler));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1622,18 +1626,19 @@ extern "C"
 			if (!g_branchTrampoline.Write6Branch(g_raceMenuAddr, uintptr_t(code.getCode())))
 				return false;
 		}
-		
+
 		{
 			struct InstallHookOnCameraMove_Code : Xbyak::CodeGenerator {
-				InstallHookOnCameraMove_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookOnCameraMove_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
 					sub(rsp, 0x20);
 
-					xor(edx, edx);
-					mov(rcx, rdi);
+					xor (edx, edx);
+					//mov(rcx, rdi); SE
+					mov(rcx, rsi);
 					call(ptr[rip + funcLabel]);
 
 					add(rsp, 0x20);
@@ -1648,7 +1653,7 @@ extern "C"
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookOnCameraMove_Code code(codeBuf, GetFnAddr(Tralala::OnCameraMove));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1659,7 +1664,7 @@ extern "C"
 
 		{
 			struct InstallHookDisablePlayerLook_Code : Xbyak::CodeGenerator {
-				InstallHookDisablePlayerLook_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookDisablePlayerLook_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label normal;
 					Xbyak::Label funcLabel;
@@ -1679,7 +1684,7 @@ extern "C"
 					sub(rsp, 0x20);
 
 					mov(rax, Tralala::g_playerCameraAddr);
-					xor(rdx, rdx);
+					xor (rdx, rdx);
 					mov(ptr[rsp], rdx);
 					lea(rdx, ptr[rsp]);
 					mov(rcx, ptr[rax]);
@@ -1698,7 +1703,7 @@ extern "C"
 					pop(rcx);
 					pop(rax);
 					jmp(ptr[rip + retn]);
-					
+
 					L(normal);
 					mov(rax, Tralala::g_playerControlsAddr);
 					mov(rax, ptr[rax]);
@@ -1709,13 +1714,13 @@ extern "C"
 
 					L(retn);
 					dq(g_disablePlayerLookAddr + 0x6);
-					
+
 					L(funcLabel);
 					dq(funcAddr);
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookDisablePlayerLook_Code code(codeBuf, GetFnAddr(Tralala::IsValidFaceToFace));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1723,10 +1728,10 @@ extern "C"
 			if (!g_branchTrampoline.Write6Branch(g_disablePlayerLookAddr, uintptr_t(code.getCode())))
 				return false;
 		}
-		
+
 		{
 			struct InstallHookOnPlayerDeath_Code : Xbyak::CodeGenerator {
-				InstallHookOnPlayerDeath_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookOnPlayerDeath_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label skip;
@@ -1762,11 +1767,12 @@ extern "C"
 					dq(g_onPlayerDeathAddr + 0x6);
 
 					L(retn2);
-					dq(g_onPlayerDeathAddr + 0x856);
+					dq(g_onPlayerDeathAddr + 0x9B7);
+					//dq(g_onPlayerDeathAddr + 0x856);  SE
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookOnPlayerDeath_Code code(codeBuf, GetFnAddr(Tralala::OnPlayerDeath));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1777,7 +1783,7 @@ extern "C"
 
 		{
 			struct InstallHookSetFreeLook_Code : Xbyak::CodeGenerator {
-				InstallHookSetFreeLook_Code(void * buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
+				InstallHookSetFreeLook_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
 				{
 					Xbyak::Label notfree;
 					Xbyak::Label retnLabel1;
@@ -1811,14 +1817,15 @@ extern "C"
 					dq(g_freeLookAddr + 0x9);
 
 					L(retnLabel2);
-					dq(g_freeLookAddr + 0x74);
+					dq(g_freeLookAddr + 0x84);
+					//dq(g_freeLookAddr + 0x74); SE
 
 					L(funcLabel);
 					dq(funcAddr);
 				}
 			};
 
-			void * codeBuf = g_localTrampoline.StartAlloc();
+			void* codeBuf = g_localTrampoline.StartAlloc();
 			InstallHookSetFreeLook_Code code(codeBuf, GetFnAddr(Tralala::SetFreeLook));
 			g_localTrampoline.EndAlloc(code.getCurr());
 
@@ -1826,7 +1833,7 @@ extern "C"
 				return false;
 
 			SafeWrite16(g_freeLookAddr + 0x5, NOP16);
-		}	
+		}
 
 		{
 			struct InstallHookTargetLocation_Code : Xbyak::CodeGenerator {
@@ -1863,7 +1870,7 @@ extern "C"
 				return false;
 		}
 
-		
+
 		{
 			struct InstallHookClearTarget_Code : Xbyak::CodeGenerator {
 				InstallHookClearTarget_Code(void* buf, uintptr_t funcAddr) : Xbyak::CodeGenerator(4096, buf)
@@ -1879,7 +1886,7 @@ extern "C"
 
 					mov(rcx, rsi);
 					call(ptr[rip + funcLabel]);
-					
+
 					test(al, al);
 					jne(disable);
 
@@ -1900,7 +1907,8 @@ extern "C"
 					dq(funcAddr);
 
 					L(retnLabel1);
-					dq(g_clearTargetAddr + 0x798);
+					dq(g_clearTargetAddr + 0x7A2);
+					//dq(g_clearTargetAddr + 0x798); SE
 
 					L(retnLabel2);
 					dq(g_clearTargetAddr + 0x19);
@@ -1937,7 +1945,7 @@ extern "C"
 					pop(r8);
 					pop(r9);
 
-					mov(qword[rbp + 0x10], 0xFFFFFFFFFFFFFFFE);
+					mov(qword[rbp + 0x40], 0xFFFFFFFFFFFFFFFE);
 					jmp(ptr[rip + retnLabel]);
 
 					L(funcLabel);
@@ -2040,8 +2048,11 @@ extern "C"
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
+					movss(dword[rbx + 0x8], xmm3); // overwritten code
+
 					sub(rsp, 0x20);
 
+					mov(rcx, rdi); // rdi = TP cam state
 					call(ptr[rip + funcLabel]);
 
 					add(rsp, 0x20);
@@ -2096,6 +2107,7 @@ extern "C"
 			if (!g_branchTrampoline.Write5Branch(g_camCollisionAddr, uintptr_t(code.getCode())))
 				return false;
 		}
+
 
 		Menus::InstallHook();
 		Graphics::InstallHook();
