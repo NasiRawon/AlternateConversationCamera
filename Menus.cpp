@@ -176,11 +176,14 @@ namespace Menus
 		const std::array<BYTE, 10> hudpattern = { 0xFF, 0x90, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x4E, 0x10 };
 		g_hudMenuNextFrameAddr = (uintptr_t)scan_memory(hudpattern, 0x2A, false);
 
-		const std::array<BYTE, 9> barterpattern = { 0x90, 0x48, 0x83, 0xBF, 0x80, 0x00, 0x00, 0x00, 0x00 };
-		g_barterMenuDtorAddr = (uintptr_t)scan_memory(barterpattern, 0x68, true);
+		//const std::array<BYTE, 9> barterpattern = { 0x90, 0x48, 0x83, 0xBF, 0x80, 0x00, 0x00, 0x00, 0x00 };
+		//g_barterMenuDtorAddr = (uintptr_t)scan_memory(barterpattern, 0x68, true);
 
-		const std::array<BYTE, 8> traincpattern = { 0x83, 0x4B, 0x1C, 0x04, 0xC6, 0x43, 0x18, 0x03 };
-		g_trainingMenuCtorAddr = (uintptr_t)scan_memory(traincpattern, 0x2C, true);
+		const std::array<BYTE, 11> barterpattern = { 0x48, 0x83, 0xC4, 0x30, 0x5F, 0xC3, 0xBA, 0xA8, 0x00, 0x00, 0x00 };
+		g_barterMenuDtorAddr = (uintptr_t)scan_memory(barterpattern, 0x64, false);
+
+		const std::array<BYTE, 8> traincpattern = { 0x83, 0x4F, 0x1C, 0x04, 0xC6, 0x47, 0x18, 0x03 };
+		g_trainingMenuCtorAddr = (uintptr_t)scan_memory(traincpattern, 0x17, false);
 
 		const std::array<BYTE, 8> traindpattern = { 0x48, 0x89, 0x6B, 0x48, 0x48, 0x8B, 0x4B, 0x38 };
 		g_trainingMenuDtorAddr = (uintptr_t)scan_memory(traindpattern, 0x39, true);
@@ -265,7 +268,8 @@ namespace Menus
 					pop(r8);
 					pop(r9);
 
-					mov(rbx, qword[rsp + 0x40]);
+					//mov(rbx, qword[rsp + 0x40]);
+					lea(rcx, qword[rbx + 0x80]);
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -273,7 +277,7 @@ namespace Menus
 					dq(funcAddr);
 
 					L(retnLabel);
-					dq(g_barterMenuDtorAddr + 0x5);
+					dq(g_barterMenuDtorAddr + 0x7);
 				}
 			};
 
@@ -284,6 +288,8 @@ namespace Menus
 
 			if (!g_branchTrampoline.Write5Branch(g_barterMenuDtorAddr, uintptr_t(code.getCode())))
 				return false;
+
+			SafeWrite16(g_barterMenuDtorAddr + 0x5, NOP16);
 		}
 
 		{
@@ -307,8 +313,10 @@ namespace Menus
 					pop(r8);
 					pop(r9);
 
-					mov(rax, rbx);
-					mov(rbx, qword[rsp + 0x58]);
+					//mov(rax, rbx);
+					//mov(rbx, qword[rsp + 0x58]);
+
+					mov(dword[rdi + 0x1C], 0x409);
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -316,7 +324,7 @@ namespace Menus
 					dq(funcAddr);
 
 					L(retnLabel);
-					dq(g_trainingMenuCtorAddr + 0x5);
+					dq(g_trainingMenuCtorAddr + 0x7);
 				}
 			};
 
@@ -327,6 +335,8 @@ namespace Menus
 
 			if (!g_branchTrampoline.Write5Branch(g_trainingMenuCtorAddr, uintptr_t(code.getCode())))
 				return false;
+
+			SafeWrite16(g_barterMenuDtorAddr + 0x5, NOP16);
 		}
 
 		{
