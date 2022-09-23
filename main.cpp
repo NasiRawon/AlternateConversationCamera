@@ -67,7 +67,10 @@ void MainGetAddresses()
 	//const std::array<BYTE, 6> processMovepattern = { 0x0F, 0x28, 0xF7, 0x48, 0x8B, 0xCB };
 	//g_processMovementAddr = (uintptr_t)scan_memory(processMovepattern, 0x4B, false);
 
-	const std::array<BYTE, 11> playerDeathpattern = { 0x44, 0x0F, 0xB6, 0xF8, 0xF6, 0x86, 0xDA, 0x0B, 0x00, 0x00, 0x0E };
+	//const std::array<BYTE, 11> playerDeathpattern = { 0x44, 0x0F, 0xB6, 0xF8, 0xF6, 0x86, 0xDA, 0x0B, 0x00, 0x00, 0x0E };
+	//g_onPlayerDeathAddr = (uintptr_t)scan_memory(playerDeathpattern, 0x22, true);
+
+	const std::array<BYTE, 11> playerDeathpattern = { 0x44, 0x0F, 0xB6, 0xF8, 0xF6, 0x86, 0xE2, 0x0B, 0x00, 0x00, 0x0E };
 	g_onPlayerDeathAddr = (uintptr_t)scan_memory(playerDeathpattern, 0x22, true);
 
 	const std::array<BYTE, 4> freeLookpattern = { 0x80, 0x79, 0x4B, 0x00 };
@@ -76,7 +79,10 @@ void MainGetAddresses()
 	const std::array<BYTE, 10> patchFOVpattern = { 0x0F, 0x28, 0xC1, 0xF3, 0x0F, 0x5E, 0xC6, 0x0F, 0x28, 0xF0 };
 	g_firstFOVAddr = (uintptr_t)scan_memory(patchFOVpattern, 0x55, true);
 
-	const std::array<BYTE, 11> tgtLocpattern = { 0xC6, 0x45, 0x67, 0x00, 0x48, 0x8B, 0x86, 0xF0, 0x01, 0x00, 0x00 };
+	//const std::array<BYTE, 11> tgtLocpattern = { 0xC6, 0x45, 0x67, 0x00, 0x48, 0x8B, 0x86, 0xF0, 0x01, 0x00, 0x00 };
+	//g_targetLocAddr = (uintptr_t)scan_memory(tgtLocpattern, 0xA4, true);
+
+	const std::array<BYTE, 11> tgtLocpattern = { 0xC6, 0x45, 0x67, 0x00, 0x48, 0x8B, 0x86, 0xF8, 0x01, 0x00, 0x00 };
 	g_targetLocAddr = (uintptr_t)scan_memory(tgtLocpattern, 0xA4, true);
 
 	const std::array<BYTE, 6> clrTgtpattern = { 0x49, 0x8B, 0xC7, 0x0F, 0x57, 0xFF };
@@ -1472,14 +1478,26 @@ namespace Tralala
 extern "C"
 {
 
-	bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
+	__declspec(dllexport) SKSEPluginVersionData SKSEPlugin_Version =
 	{
+		SKSEPluginVersionData::kVersion,
 
+		1,
+		"Alternate Conversation Camera",
+
+		"NasGorTelorCeplok",
+		"",
+
+		0,
+		2,	// version independent
+		{ 0 },
+
+		0,	// works with any version of the script extender. you probably do not need to put anything here
+	};
+
+	bool SKSEPlugin_Load(const SKSEInterface* skse)
+	{
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\Alternate Conversation Camera.log");
-
-		info->infoVersion = PluginInfo::kInfoVersion;
-		info->name = "Alternate Conversation Camera";
-		info->version = 1;
 
 		g_pluginHandle = skse->GetPluginHandle();
 
@@ -1501,11 +1519,6 @@ extern "C"
 			return false;
 		}
 
-		return true;
-	}
-
-	bool SKSEPlugin_Load(const SKSEInterface* skse)
-	{
 		_MESSAGE("Load");
 
 		MainGetAddresses();
@@ -1846,7 +1859,7 @@ extern "C"
 
 					lea(r8, ptr[rsp + 0x58]);
 					mov(rdx, rsi);
-					mov(rcx, ptr[rsi + 0xF0]);
+					mov(rcx, ptr[rsi + 0xF8]);
 					call(ptr[rip + funcLabel]);
 
 					add(rsp, 0x20);
@@ -1893,14 +1906,14 @@ extern "C"
 					add(rsp, 0x20);
 					pop(rcx);
 					pop(rax);
-					mov(rax, ptr[rcx + 0x1F0]);
+					mov(rax, ptr[rcx + 0x1F8]);
 					jmp(ptr[rip + retnLabel2]);
 
 					L(disable);
 					add(rsp, 0x20);
 					pop(rcx);
 					pop(rax);
-					mov(rax, ptr[rcx + 0x1F0]);
+					mov(rax, ptr[rcx + 0x1F8]);
 					jmp(ptr[rip + retnLabel1]);
 
 					L(funcLabel);

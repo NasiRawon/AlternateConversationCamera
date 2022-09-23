@@ -198,11 +198,11 @@ namespace Tralala
 		TESObjectCELL	* parentCell;	// 60
 		LoadedState		* loadedState;	// 68	
 		BaseExtraList	extraData;		// 70
-		UInt64			unk88; // 88 - New in SE
-		UInt16			scale;	// 90 - init'd to 100
-		UInt8			unk92;	// 92
-		UInt8			unk93;	// 93
-		UInt32			pad94;	// 94
+		UInt64			unk88; // 90 - New in SE
+		UInt16			scale;	// 98 - init'd to 100
+		UInt8			unk92;	// 9A
+		UInt8			unk93;	// 9B
+		UInt32			pad94;	// 9C
 
 		float GetDistance(TESObjectREFR * target);
 		float GetTargetHeight();
@@ -218,7 +218,7 @@ namespace Tralala
 		void DecRef();
 	};
 
-	STATIC_ASSERT(sizeof(TESObjectREFR) == 0x98);
+	STATIC_ASSERT(sizeof(TESObjectREFR) == 0xA0);
 	STATIC_ASSERT(offsetof(TESObjectREFR, extraData) == 0x70);
 	STATIC_ASSERT(offsetof(TESObjectREFR, loadedState) == 0x68);
 	STATIC_ASSERT(offsetof(TESObjectREFR::LoadedState, node) == 0x68);
@@ -683,12 +683,12 @@ namespace Tralala
 		};
 	};
 
-	STATIC_ASSERT(offsetof(Actor, magicTarget) == 0x98);
-	STATIC_ASSERT(offsetof(Actor, actorValueOwner) == 0xB0);
-	STATIC_ASSERT(offsetof(Actor, actorState) == 0xB8);
-	STATIC_ASSERT(offsetof(Actor, unk0D8) == 0xD8);
-	STATIC_ASSERT(offsetof(Actor, addedSpells) == 0x188);
-	STATIC_ASSERT(sizeof(Actor) == 0x2B0);
+	STATIC_ASSERT(offsetof(Actor, magicTarget) == 0xA0);
+	STATIC_ASSERT(offsetof(Actor, actorValueOwner) == 0xB8);
+	STATIC_ASSERT(offsetof(Actor, actorState) == 0xC0);
+	STATIC_ASSERT(offsetof(Actor, unk0D8) == 0xE0);
+	STATIC_ASSERT(offsetof(Actor, addedSpells) == 0x190);
+	STATIC_ASSERT(sizeof(Actor) == 0x2B8);
 
 	// 2B0 
 	class Character : public Actor
@@ -697,7 +697,7 @@ namespace Tralala
 		enum { kTypeID = kFormType_Character };
 	};
 
-	STATIC_ASSERT(sizeof(Character) == 0x2B0);
+	STATIC_ASSERT(sizeof(Character) == 0x2B8);
 
 	// BE0 
 	class PlayerCharacter : public Character
@@ -990,18 +990,19 @@ namespace Tralala
 		bool GetIsNPCAnimVar();
 	};
 
-	STATIC_ASSERT(offsetof(PlayerCharacter, userEventEnabledEvent) == 0x2C0);
-	STATIC_ASSERT(offsetof(PlayerCharacter, numPerkPoints) == 0xB01);
-	STATIC_ASSERT(offsetof(PlayerCharacter, tintMasks) == 0xB10);
-	STATIC_ASSERT(offsetof(PlayerCharacter, overlayTintMasks) == 0xB28);
-	STATIC_ASSERT(offsetof(PlayerCharacter, unk3D8) == 0x3D8);
-	STATIC_ASSERT(offsetof(PlayerCharacter, lastRiddenHorseHandle) == 0x914);
-	STATIC_ASSERT(offsetof(PlayerCharacter, skills) == 0x9B0);
-	STATIC_ASSERT(offsetof(PlayerCharacter, tempPoison) == 0xA00);
-	STATIC_ASSERT(offsetof(PlayerCharacter, hostileHandles) == 0x9D8);
-	STATIC_ASSERT(offsetof(PlayerCharacter, currentWorldSpace) == 0x628);
-	STATIC_ASSERT(offsetof(PlayerCharacter, addedPerks) == 0x4B0);
-	STATIC_ASSERT(offsetof(PlayerCharacter, sameWorldSpace) == 0x988);
-	STATIC_ASSERT(offsetof(PlayerCharacter, unk890) == 0x890);
-	STATIC_ASSERT(sizeof(PlayerCharacter) == 0xBE0);
+	STATIC_ASSERT(offsetof(PlayerCharacter, userEventEnabledEvent) == 0x2C8);
+	STATIC_ASSERT(offsetof(PlayerCharacter, numPerkPoints) == 0xB09);
+	STATIC_ASSERT(offsetof(PlayerCharacter, tintMasks) == 0xB18);
+	STATIC_ASSERT(offsetof(PlayerCharacter, overlayTintMasks) == 0xB30);
+	STATIC_ASSERT(offsetof(PlayerCharacter, unk3D8) == 0x3E0);
+	STATIC_ASSERT(offsetof(PlayerCharacter, lastRiddenHorseHandle) == 0x91C);
+	STATIC_ASSERT(offsetof(PlayerCharacter, skills) == 0x9B8);
+	STATIC_ASSERT(offsetof(PlayerCharacter, tempPoison) == 0xA08);
+	STATIC_ASSERT(offsetof(PlayerCharacter, hostileHandles) == 0x9E0);
+	STATIC_ASSERT(offsetof(PlayerCharacter, currentWorldSpace) == 0x630);
+	STATIC_ASSERT(offsetof(PlayerCharacter, addedPerks) == 0x4B8);
+	STATIC_ASSERT(offsetof(PlayerCharacter, sameWorldSpace) == 0x990);
+	STATIC_ASSERT(offsetof(PlayerCharacter, unk890) == 0x898);
+	STATIC_ASSERT(offsetof(PlayerCharacter, unkBD9) == 0xBE1);
+	STATIC_ASSERT(sizeof(PlayerCharacter) == 0xBE8);
 }
